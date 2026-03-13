@@ -1,0 +1,59 @@
+.assignments-page {
+  animation: fadeIn 0.3s ease;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.assign-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.assign-table th,
+.assign-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.assign-table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.assign-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.badge-assigned {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-en-route {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-pending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

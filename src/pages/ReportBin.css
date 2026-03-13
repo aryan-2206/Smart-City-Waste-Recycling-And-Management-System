@@ -1,0 +1,72 @@
+.report-bin {
+  animation: fadeIn 0.3s ease;
+}
+
+.form-card {
+  max-width: 400px;
+}
+
+.report-form label {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.report-form label:first-of-type {
+  margin-top: 0;
+}
+
+.report-form input,
+.report-form select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  margin-top: 0.35rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+}
+
+.report-form input:focus,
+.report-form select:focus {
+  outline: none;
+  border-color: #0d5c2e;
+}
+
+.btn {
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  margin-top: 1.25rem;
+}
+
+.btn-primary {
+  background: #0d5c2e;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0a4a24;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.success-msg {
+  max-width: 420px;
+}
+
+.success-msg p {
+  margin: 0 0 1rem;
+  color: #374151;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
