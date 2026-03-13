@@ -278,7 +278,7 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
-          <h3 className="text-lg font-semibold mb-2">Quick Report</h3>
+          <h3 className="text-lg font-semibold mb-2 text-black">Quick Report</h3>
           <p className="text-blue-100 mb-4">Report a full bin immediately</p>
           <button 
             onClick={handleQuickReport}
@@ -289,7 +289,7 @@ export default function Dashboard() {
         </div>
         
         <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
-          <h3 className="text-lg font-semibold mb-2">View Routes</h3>
+          <h3 className="text-lg font-semibold mb-2 text-black">View Routes</h3>
           <p className="text-green-100 mb-4">Check active truck routes</p>
           <button 
             onClick={handleViewRoutes}
@@ -300,7 +300,7 @@ export default function Dashboard() {
         </div>
         
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow p-6 text-white">
-          <h3 className="text-lg font-semibold mb-2">Analytics</h3>
+          <h3 className="text-lg font-semibold mb-2 text-black">Analytics</h3>
           <p className="text-purple-100 mb-4">Detailed waste analytics</p>
           <button 
             onClick={handleViewAnalytics}
