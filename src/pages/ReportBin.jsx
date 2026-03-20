@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, AlertTriangle, Camera, Clock, CheckCircle, Search } from 'lucide-react';
 
 const areas = [
@@ -33,6 +33,7 @@ export default function ReportBin() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const location = useLocation();
   const [formData, setFormData] = useState({
     binId: '',
     area: '',
@@ -49,6 +50,13 @@ export default function ReportBin() {
   const [filteredAreas, setFilteredAreas] = useState(areas);
   const [showAreaDropdown, setShowAreaDropdown] = useState(false);
   const navigate = useNavigate();
+
+  // Prefill urgency when user comes from an emergency CTA.
+  useEffect(() => {
+    if (location.state?.isEmergency) {
+      setFormData((prev) => ({ ...prev, urgency: 'urgent' }));
+    }
+  }, [location.state]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -158,7 +166,7 @@ export default function ReportBin() {
     });
     setSearchQuery('');
     setSubmitted(false);
-    navigate('/dashboard');
+    navigate('/');
   };
 
   const handlePhotoUpload = (e) => {

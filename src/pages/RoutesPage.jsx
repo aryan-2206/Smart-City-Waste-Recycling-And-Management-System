@@ -222,7 +222,7 @@ export default function RoutesPage() {
     navigate('/assignments');
   };
 
-  const generateMapVisualization = () => {
+  const _generateMapVisualization = () => {
     return (
       <div className="relative bg-gray-100 rounded-lg h-96 overflow-hidden">
         {/* Simulated map background */}

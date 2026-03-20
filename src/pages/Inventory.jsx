@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Package, AlertTriangle, TrendingUp, TrendingDown, Plus, Edit2, Trash2, Search, Filter, Download, Upload, BarChart3, PackageOpen, Truck, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 const Inventory = () => {
@@ -9,7 +9,6 @@ const Inventory = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Sample inventory data
   const [inventory, setInventory] = useState([

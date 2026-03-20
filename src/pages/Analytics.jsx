@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, Download, Filter, BarChart3, PieChartIcon, Activity, Users, Truck, AlertTriangle, CheckCircle, Clock, DollarSign, Leaf, Recycle } from 'lucide-react';
 
 const Analytics = () => {
   const [timeRange, setTimeRange] = useState('month');
-  const [selectedMetric, setSelectedMetric] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
 

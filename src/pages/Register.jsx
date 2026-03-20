@@ -10,7 +10,7 @@ const Register = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    role: 'operator',
+    role: 'user',
     department: 'operations',
     location: ''
   });
@@ -96,7 +96,7 @@ const Register = () => {
     try {
       await register(formData);
       navigate('/', { replace: true });
-    } catch (error) {
+    } catch {
       // Error is handled by auth context
     }
   };
@@ -224,9 +224,9 @@ const Register = () => {
                   onChange={handleChange}
                   className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                 >
-                  <option value="operator">Operator</option>
+                  <option value="user">User</option>
                   <option value="driver">Driver</option>
-                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
                 </select>
               </div>
 

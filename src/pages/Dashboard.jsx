@@ -102,7 +102,7 @@ export default function Dashboard() {
         };
         
         storedReports.forEach(report => {
-          if (areaCounts.hasOwnProperty(report.area)) {
+          if (Object.prototype.hasOwnProperty.call(areaCounts, report.area)) {
             areaCounts[report.area]++;
           }
         });
@@ -245,7 +245,7 @@ export default function Dashboard() {
         };
         
         storedReports.forEach(report => {
-          if (areaCounts.hasOwnProperty(report.area)) {
+          if (Object.prototype.hasOwnProperty.call(areaCounts, report.area)) {
             areaCounts[report.area]++;
           }
         });
@@ -345,19 +345,24 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-              </div>
-              <div className={`${color} p-3 rounded-full`}>
-                <Icon className="h-6 w-6 text-white" />
+        {stats.map(({ label, value, icon: IconComponent, color }) => {
+          // `no-unused-vars` can miss JSX component usage, so explicitly reference it.
+          void IconComponent;
+
+          return (
+            <div key={label} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{label}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+                </div>
+                <div className={`${color} p-3 rounded-full`}>
+                  <IconComponent className="h-6 w-6 text-white" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Charts Section */}

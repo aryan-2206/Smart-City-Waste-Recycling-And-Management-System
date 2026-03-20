@@ -182,7 +182,8 @@ export const AuthProvider = ({ children }) => {
         name: userData.name,
         role: userData.role || 'user',
         phone: userData.phone || '',
-        address: userData.address || ''
+        // Register form uses `location`, but the app displays it as `address`.
+        address: userData.address || userData.location || ''
       };
       
       const token = `mock-token-${newUser.id}-${Date.now()}`;

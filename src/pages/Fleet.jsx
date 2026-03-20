@@ -6,9 +6,7 @@ const Fleet = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Sample fleet data
   const [fleet, setFleet] = useState([
@@ -272,7 +270,7 @@ const Fleet = () => {
     const vehicle = fleet.find(v => v.id === vehicleId);
     if (vehicle) {
       setSelectedVehicle(vehicle);
-      setShowMaintenanceModal(true);
+      addNotification(`Maintenance scheduled for ${vehicle.plateNumber}`, 'success');
     }
   };
 
@@ -298,7 +296,6 @@ const Fleet = () => {
   }, [fleet]);
 
   const activeVehicles = fleet.filter(v => v.status === 'active').length;
-  const maintenanceVehicles = fleet.filter(v => v.status === 'maintenance').length;
   const totalRevenue = fleet.reduce((sum, v) => sum + v.revenue, 0);
   const totalOperatingCost = fleet.reduce((sum, v) => sum + v.operatingCost, 0);
   const totalCollections = fleet.reduce((sum, v) => sum + v.todayCollections, 0);

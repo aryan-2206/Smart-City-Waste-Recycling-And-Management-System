@@ -17,23 +17,15 @@ class AuthService {
   }
 
   async login(email, password) {
-    try {
-      const response = await api.login({ email, password });
-      this.currentUser = response.data.user;
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.login({ email, password });
+    this.currentUser = response.data.user;
+    return response;
   }
 
   async register(userData) {
-    try {
-      const response = await api.register(userData);
-      this.currentUser = response.data.user;
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.register(userData);
+    this.currentUser = response.data.user;
+    return response;
   }
 
   async logout() {
@@ -49,14 +41,10 @@ class AuthService {
   }
 
   async updateProfile(userData) {
-    try {
-      const response = await api.updateProfile(userData);
-      this.currentUser = response.data.user;
-      localStorage.setItem('user', JSON.stringify(this.currentUser));
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.updateProfile(userData);
+    this.currentUser = response.data.user;
+    localStorage.setItem('user', JSON.stringify(this.currentUser));
+    return response;
   }
 
   isAuthenticated() {

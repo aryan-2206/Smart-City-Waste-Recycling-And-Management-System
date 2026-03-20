@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
 
 export const useApi = (apiCall, dependencies = []) => {
   const [data, setData] = useState(null);

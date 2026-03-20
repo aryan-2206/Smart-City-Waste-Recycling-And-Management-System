@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Truck, MapPin, Navigation, Clock, CheckCircle, AlertTriangle, Users, Fuel, Route, Phone, MessageSquare, Play, Pause, Square, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 const MapComponent = ({ route, onLocationClick, isSimulating, onStartRoute, onPauseRoute, onCompleteRoute }) => {
-  const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
   const [mapZoom, setMapZoom] = useState(12);
   const [selectedStop, setSelectedStop] = useState(null);
   const [showTraffic, setShowTraffic] = useState(true);

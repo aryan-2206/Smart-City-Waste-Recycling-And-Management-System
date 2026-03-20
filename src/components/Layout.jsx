@@ -1,68 +1,60 @@
-import { useState, useEffect, createContext, useContext } from 'react';
-import { Link, useLocation, Outlet, NavLink } from 'react-router-dom';
+import { useState, useEffect, createContext } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Trash2, Home, FileText, Users, Map, Menu, Sun, Moon, Bell, Settings, LogOut, MapPin, ClipboardList, Truck, BarChart3, Package, Wrench, Database, AlertCircle, CheckCircle, Info, X as CloseIcon } from 'lucide-react';
 
 // Notification Context
 const NotificationContext = createContext();
 
-export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotifications must be used within a Layout component');
+const initialDemoNotifications = [
+  {
+    id: 1,
+    type: 'urgent',
+    title: 'Urgent: Bin Overflow',
+    message: 'Bin B-042 in North Sector reported as overflowing',
+    time: '2 mins ago',
+    icon: AlertCircle,
+    read: false
+  },
+  {
+    id: 2,
+    type: 'success',
+    title: 'Route Completed',
+    message: 'Driver Raj Kumar completed Route A successfully',
+    time: '15 mins ago',
+    icon: CheckCircle,
+    read: false
+  },
+  {
+    id: 3,
+    type: 'info',
+    title: 'New Assignment',
+    message: '3 new waste collection assignments created',
+    time: '1 hour ago',
+    icon: Info,
+    read: true
+  },
+  {
+    id: 4,
+    type: 'warning',
+    title: 'Low Fuel Alert',
+    message: 'Vehicle TRK-002 fuel level below 25%',
+    time: '2 hours ago',
+    icon: AlertCircle,
+    read: true
   }
-  return context;
-};
+];
 
 export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const location = useLocation();
-
-  // Auto-generate some demo notifications
-  useEffect(() => {
-    const demoNotifications = [
-      {
-        id: 1,
-        type: 'urgent',
-        title: 'Urgent: Bin Overflow',
-        message: 'Bin B-042 in North Sector reported as overflowing',
-        time: '2 mins ago',
-        icon: AlertCircle,
-        read: false
-      },
-      {
-        id: 2,
-        type: 'success',
-        title: 'Route Completed',
-        message: 'Driver Raj Kumar completed Route A successfully',
-        time: '15 mins ago',
-        icon: CheckCircle,
-        read: false
-      },
-      {
-        id: 3,
-        type: 'info',
-        title: 'New Assignment',
-        message: '3 new waste collection assignments created',
-        time: '1 hour ago',
-        icon: Info,
-        read: true
-      },
-      {
-        id: 4,
-        type: 'warning',
-        title: 'Low Fuel Alert',
-        message: 'Vehicle TRK-002 fuel level below 25%',
-        time: '2 hours ago',
-        icon: AlertCircle,
-        read: true
-      }
-    ];
-
-    setNotifications(demoNotifications);
-  }, []);
+  const [notifications, setNotifications] = useState(initialDemoNotifications);
+  const { user, logout } = useAuth();
+  const role = user?.role;
+  const isAdmin = role === 'admin';
+  const isDriver = role === 'driver';
+  const navigate = useNavigate();
 
   const addNotification = (notification) => {
     const newNotification = {
@@ -178,16 +170,6 @@ export default function Layout() {
     }
   };
 
-  const getNotificationColor = (type) => {
-    switch (type) {
-      case 'urgent': return 'bg-red-50 border-red-200 text-red-800';
-      case 'success': return 'bg-green-50 border-green-200 text-green-800';
-      case 'warning': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
-      case 'info': return 'bg-blue-50 border-blue-200 text-blue-800';
-      default: return 'bg-gray-50 border-gray-200 text-gray-800';
-    }
-  };
-
   return (
     <NotificationContext.Provider value={{ addNotification, notifications, unreadCount }}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -234,76 +216,86 @@ export default function Layout() {
                   <MapPin className="h-4 w-4" aria-hidden="true" />
                   <span>Report Bin</span>
                 </NavLink>
-                <NavLink 
-                  to="/assignments" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive 
-                        ? 'bg-green-700 text-white' 
-                        : 'text-green-100 hover:bg-green-700 hover:text-white'
-                    }`
-                  }
-                  aria-label="Manage assignments"
-                >
-                  <ClipboardList className="h-4 w-4" aria-hidden="true" />
-                  <span>Assignments</span>
-                </NavLink>
-                <NavLink 
-                  to="/routes" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive 
-                        ? 'bg-green-700 text-white' 
-                        : 'text-green-100 hover:bg-green-700 hover:text-white'
-                    }`
-                  }
-                  aria-label="View truck routes"
-                >
-                  <Truck className="h-4 w-4" aria-hidden="true" />
-                  <span>Routes</span>
-                </NavLink>
-                <NavLink 
-                  to="/analytics" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive 
-                        ? 'bg-green-700 text-white' 
-                        : 'text-green-100 hover:bg-green-700 hover:text-white'
-                    }`
-                  }
-                  aria-label="View analytics"
-                >
-                  <BarChart3 className="h-4 w-4" aria-hidden="true" />
-                  <span>Analytics</span>
-                </NavLink>
-                <NavLink 
-                  to="/inventory" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive 
-                        ? 'bg-green-700 text-white' 
-                        : 'text-green-100 hover:bg-green-700 hover:text-white'
-                    }`
-                  }
-                  aria-label="Manage inventory"
-                >
-                  <Package className="h-4 w-4" aria-hidden="true" />
-                  <span>Inventory</span>
-                </NavLink>
-                <NavLink 
-                  to="/fleet" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive 
-                        ? 'bg-green-700 text-white' 
-                        : 'text-green-100 hover:bg-green-700 hover:text-white'
-                    }`
-                  }
-                  aria-label="Manage fleet"
-                >
-                  <Wrench className="h-4 w-4" aria-hidden="true" />
-                  <span>Fleet</span>
-                </NavLink>
+                {isAdmin && (
+                  <NavLink 
+                    to="/assignments" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive 
+                          ? 'bg-green-700 text-white' 
+                          : 'text-green-100 hover:bg-green-700 hover:text-white'
+                      }`
+                    }
+                    aria-label="Manage assignments"
+                  >
+                    <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                    <span>Assignments</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink 
+                    to="/routes" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive 
+                          ? 'bg-green-700 text-white' 
+                          : 'text-green-100 hover:bg-green-700 hover:text-white'
+                      }`
+                    }
+                    aria-label="View truck routes"
+                  >
+                    <Truck className="h-4 w-4" aria-hidden="true" />
+                    <span>Routes</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink 
+                    to="/analytics" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive 
+                          ? 'bg-green-700 text-white' 
+                          : 'text-green-100 hover:bg-green-700 hover:text-white'
+                      }`
+                    }
+                    aria-label="View analytics"
+                  >
+                    <BarChart3 className="h-4 w-4" aria-hidden="true" />
+                    <span>Analytics</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink 
+                    to="/inventory" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive 
+                          ? 'bg-green-700 text-white' 
+                          : 'text-green-100 hover:bg-green-700 hover:text-white'
+                      }`
+                    }
+                    aria-label="Manage inventory"
+                  >
+                    <Package className="h-4 w-4" aria-hidden="true" />
+                    <span>Inventory</span>
+                  </NavLink>
+                )}
+                {(isAdmin || isDriver) && (
+                  <NavLink 
+                    to="/fleet" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive 
+                          ? 'bg-green-700 text-white' 
+                          : 'text-green-100 hover:bg-green-700 hover:text-white'
+                      }`
+                    }
+                    aria-label="Manage fleet"
+                  >
+                    <Wrench className="h-4 w-4" aria-hidden="true" />
+                    <span>Fleet</span>
+                  </NavLink>
+                )}
               </nav>
 
               {/* Action Buttons */}
@@ -414,6 +406,17 @@ export default function Layout() {
                 >
                   {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </button>
+
+                <button
+                  onClick={async () => {
+                    await logout();
+                    navigate('/login', { replace: true });
+                  }}
+                  className="p-2 text-green-100 hover:text-white transition-colors"
+                  aria-label="Log out"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
 
               {/* Mobile menu button */}
@@ -463,96 +466,122 @@ export default function Layout() {
                   <MapPin className="h-4 w-4" aria-hidden="true" />
                   <span>Report Bin</span>
                 </NavLink>
-                <NavLink 
-                  to="/assignments" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-green-800 text-white' 
-                        : 'text-green-100 hover:bg-green-800 hover:text-white'
-                    }`
-                  }
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="Manage assignments"
+                {isAdmin && (
+                  <NavLink 
+                    to="/assignments" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                        isActive 
+                          ? 'bg-green-800 text-white' 
+                          : 'text-green-100 hover:bg-green-800 hover:text-white'
+                      }`
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="Manage assignments"
+                  >
+                    <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                    <span>Assignments</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink 
+                    to="/routes" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                        isActive 
+                          ? 'bg-green-800 text-white' 
+                          : 'text-green-100 hover:bg-green-800 hover:text-white'
+                      }`
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="View truck routes"
+                  >
+                    <Truck className="h-4 w-4" aria-hidden="true" />
+                    <span>Routes</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink 
+                    to="/analytics" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                        isActive 
+                          ? 'bg-green-800 text-white' 
+                          : 'text-green-100 hover:bg-green-800 hover:text-white'
+                      }`
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="View analytics"
+                  >
+                    <BarChart3 className="h-4 w-4" aria-hidden="true" />
+                    <span>Analytics</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink 
+                    to="/inventory" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                        isActive 
+                          ? 'bg-green-800 text-white' 
+                          : 'text-green-100 hover:bg-green-800 hover:text-white'
+                      }`
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="Manage inventory"
+                  >
+                    <Package className="h-4 w-4" aria-hidden="true" />
+                    <span>Inventory</span>
+                  </NavLink>
+                )}
+                {(isAdmin || isDriver) && (
+                  <NavLink 
+                    to="/fleet" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                        isActive 
+                          ? 'bg-green-800 text-white' 
+                          : 'text-green-100 hover:bg-green-800 hover:text-white'
+                      }`
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="Manage fleet"
+                  >
+                    <Wrench className="h-4 w-4" aria-hidden="true" />
+                    <span>Fleet</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink 
+                    to="/settings" 
+                    className={({ isActive }) => 
+                      `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                        isActive 
+                          ? 'bg-green-800 text-white' 
+                          : 'text-green-100 hover:bg-green-800 hover:text-white'
+                      }`
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="Settings"
+                  >
+                    <Settings className="h-4 w-4" aria-hidden="true" />
+                    <span>Settings</span>
+                  </NavLink>
+                )}
+
+                <button
+                  onClick={async () => {
+                    await logout();
+                    navigate('/login', { replace: true });
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-green-100 hover:bg-green-800"
+                  aria-label="Log out"
                 >
-                  <ClipboardList className="h-4 w-4" aria-hidden="true" />
-                  <span>Assignments</span>
-                </NavLink>
-                <NavLink 
-                  to="/routes" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-green-800 text-white' 
-                        : 'text-green-100 hover:bg-green-800 hover:text-white'
-                    }`
-                  }
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="View truck routes"
-                >
-                  <Truck className="h-4 w-4" aria-hidden="true" />
-                  <span>Routes</span>
-                </NavLink>
-                <NavLink 
-                  to="/analytics" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-green-800 text-white' 
-                        : 'text-green-100 hover:bg-green-800 hover:text-white'
-                    }`
-                  }
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="View analytics"
-                >
-                  <BarChart3 className="h-4 w-4" aria-hidden="true" />
-                  <span>Analytics</span>
-                </NavLink>
-                <NavLink 
-                  to="/inventory" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-green-800 text-white' 
-                        : 'text-green-100 hover:bg-green-800 hover:text-white'
-                    }`
-                  }
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="Manage inventory"
-                >
-                  <Package className="h-4 w-4" aria-hidden="true" />
-                  <span>Inventory</span>
-                </NavLink>
-                <NavLink 
-                  to="/fleet" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-green-800 text-white' 
-                        : 'text-green-100 hover:bg-green-800 hover:text-white'
-                    }`
-                  }
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="Manage fleet"
-                >
-                  <Wrench className="h-4 w-4" aria-hidden="true" />
-                  <span>Fleet</span>
-                </NavLink>
-                <NavLink 
-                  to="/settings" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-green-800 text-white' 
-                        : 'text-green-100 hover:bg-green-800 hover:text-white'
-                    }`
-                  }
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="Settings"
-                >
-                  <Settings className="h-4 w-4" aria-hidden="true" />
-                  <span>Settings</span>
-                </NavLink>
+                  <div className="flex items-center space-x-2">
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
+                    <span>Log out</span>
+                  </div>
+                </button>
               </div>
             </div>
           )}

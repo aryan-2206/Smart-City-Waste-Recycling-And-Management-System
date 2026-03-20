@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { User, Bell, Shield, Palette, Globe, Database, Smartphone, Mail, Lock, Eye, EyeOff, Save, RotateCcw, Download, Upload, Trash2, Settings as SettingsIcon } from 'lucide-react';
 
 const Settings = () => {

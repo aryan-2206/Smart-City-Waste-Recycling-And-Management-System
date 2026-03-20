@@ -101,7 +101,7 @@ const Login = () => {
     try {
       await login(formData.email, formData.password);
       navigate('/', { replace: true });
-    } catch (error) {
+    } catch {
       // Error is handled by auth context
     }
   };

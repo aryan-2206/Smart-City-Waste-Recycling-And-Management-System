@@ -116,7 +116,7 @@ export default function DriverDashboard() {
     }
   };
 
-  const handleCompleteStop = (stopId) => {
+  const handleCompleteStop = () => {
     // Simulate completing a stop
     const newProgress = Math.min(100, routeProgress.progress + (100 / routeProgress.totalStops));
     setRouteProgress({
@@ -146,7 +146,7 @@ export default function DriverDashboard() {
   const quickActions = [
     { title: 'Start Route', description: 'Begin your assigned route', icon: Truck, action: handleStartRoute, color: 'bg-green-500' },
     { title: 'Emergency Report', description: 'Report urgent issue', icon: AlertTriangle, action: handleEmergencyReport, color: 'bg-red-500' },
-    { title: 'Contact Dispatch', description: 'Call dispatch center', icon: Phone, action: () => {}, color: 'bg-blue-500' },
+    { title: 'Contact Dispatch', description: 'Call dispatch center', icon: Phone, action: () => alert('Calling dispatch center...'), color: 'bg-blue-500' },
     { title: 'Truck Status', description: 'View vehicle details', icon: Wrench, action: () => navigate('/fleet'), color: 'bg-yellow-500' },
   ];
 

@@ -114,14 +114,27 @@ export default function UserDashboard() {
     alert(`Contacting ${driverName}...`);
   };
 
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const quickActions = [
     { title: 'Report Bin', description: 'Report a full bin', icon: FileText, action: handleNewReport, color: 'bg-green-500' },
-    { title: 'View Reports', description: 'See your report history', icon: BarChart3, action: () => {}, color: 'bg-blue-500' },
-    { title: 'Track Driver', description: 'Check driver status', icon: MapPin, action: () => {}, color: 'bg-yellow-500' },
-    { title: 'Emergency', description: 'Report urgent issue', icon: AlertTriangle, action: () => {}, color: 'bg-red-500' },
+    { title: 'View Reports', description: 'See your report history', icon: BarChart3, action: () => scrollToSection('user-recent-reports'), color: 'bg-blue-500' },
+    { title: 'Track Driver', description: 'Check driver status', icon: MapPin, action: () => scrollToSection('user-driver-status'), color: 'bg-yellow-500' },
+    {
+      title: 'Emergency',
+      description: 'Report urgent issue',
+      icon: AlertTriangle,
+      action: () => navigate('/report', { state: { isEmergency: true } }),
+      color: 'bg-red-500'
+    },
   ];
 
-  const reportHistory = [
+  const _reportHistory = [
     { id: 1, binId: 'B-042', area: 'North Sector', date: '2024-03-20', status: 'completed', driver: 'Raj Kumar' },
     { id: 2, binId: 'B-018', area: 'East Zone', date: '2024-03-19', status: 'in-progress', driver: 'Amit Singh' },
     { id: 3, binId: 'B-091', area: 'Central', date: '2024-03-18', status: 'pending', driver: 'Unassigned' },
@@ -221,7 +234,7 @@ export default function UserDashboard() {
       {/* Recent Reports & Driver Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Reports */}
-        <div className="bg-white rounded-lg shadow">
+        <div id="user-recent-reports" className="bg-white rounded-lg shadow">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Recent Reports</h2>
             <div className="space-y-3">
@@ -270,7 +283,7 @@ export default function UserDashboard() {
         </div>
 
         {/* Driver Status */}
-        <div className="bg-white rounded-lg shadow">
+        <div id="user-driver-status" className="bg-white rounded-lg shadow">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Driver Status</h2>
             <div className="space-y-3">
