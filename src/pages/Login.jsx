@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Trash2, Users, Truck, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
@@ -10,10 +10,42 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showRoleInfo, setShowRoleInfo] = useState(false);
   
   const { login, isAuthenticated, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Demo accounts for different roles
+  const demoAccounts = [
+    {
+      role: 'admin',
+      email: 'admin@wastemanagement.com',
+      password: 'admin123',
+      name: 'System Administrator',
+      icon: Users,
+      color: 'bg-purple-500',
+      description: 'Full system access and management'
+    },
+    {
+      role: 'driver',
+      email: 'driver@wastemanagement.com',
+      password: 'driver123',
+      name: 'Driver Access',
+      icon: Truck,
+      color: 'bg-green-500',
+      description: 'Route management and truck status'
+    },
+    {
+      role: 'user',
+      email: 'user@wastemanagement.com',
+      password: 'user123',
+      name: 'Public User',
+      icon: User,
+      color: 'bg-blue-500',
+      description: 'Report bins and track status'
+    }
+  ];
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -76,7 +108,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="sm:mx-auto sm:w-full sm:max-w-4xl">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="flex justify-center mb-6">
             <div className="flex items-center space-x-2">
@@ -85,9 +117,64 @@ const Login = () => {
             </div>
           </div>
           
-          <h2 className="text-center text-2xl font-extrabold text-gray-900 mb-6">
+          <h2 className="text-center text-2xl font-extrabold text-gray-900 mb-2">
             Sign in to your account
           </h2>
+          
+          <p className="text-center text-sm text-gray-600 mb-6">
+            Choose your role below or enter your credentials
+          </p>
+
+          {/* Demo Account Selection */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Demo Accounts</h3>
+              <button
+                type="button"
+                onClick={() => setShowRoleInfo(!showRoleInfo)}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                {showRoleInfo ? 'Hide' : 'Show'} Role Info
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {demoAccounts.map((account, index) => {
+                const Icon = account.icon;
+                return (
+                  <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center mb-3">
+                      <div className={`${account.color} p-2 rounded-full mr-3`}>
+                        <Icon className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="font-medium text-gray-900">{account.name}</span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">Email:</span>
+                        <span className="font-mono ml-1">{account.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Password:</span>
+                        <span className="font-mono ml-1">{account.password}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3">{account.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or use custom credentials</span>
+            </div>
+          </div>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -180,42 +267,38 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
               >
                 {loading ? (
-                  <>
+                  <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Signing in...
-                  </>
+                  </div>
                 ) : (
                   'Sign in'
                 )}
               </button>
             </div>
+          </form>
 
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or</span>
-                </div>
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">New to our platform?</span>
               </div>
             </div>
-
             <div className="mt-6 text-center">
-              <span className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link
-                  to="/register"
-                  className="font-medium text-green-600 hover:text-green-500"
-                >
-                  Sign up
-                </Link>
-              </span>
+              <Link
+                to="/register"
+                className="font-medium text-green-600 hover:text-green-500"
+              >
+                Create an account
+              </Link>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

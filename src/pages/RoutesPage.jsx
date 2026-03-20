@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, MapPin, Navigation, Clock, CheckCircle, AlertCircle, Users, Fuel, Route, Phone, MessageSquare, Play, Pause, Square } from 'lucide-react';
+import MapComponent from '../components/MapComponent';
 
 const routes = [
   {
@@ -595,7 +596,19 @@ export default function RoutesPage() {
             <h3 className="text-lg font-medium text-gray-900 mb-2">Interactive Route Map</h3>
             <p className="text-gray-500">Real-time visualization of active collection routes</p>
           </div>
-          {generateMapVisualization()}
+          {selectedRoute && (
+            <MapComponent
+              route={selectedRoute}
+              onLocationClick={(stop) => {
+                console.log('Location clicked:', stop);
+                // Handle location click - could show details or navigate
+              }}
+              isSimulating={isSimulating}
+              onStartRoute={() => handleStartRoute(selectedRoute.id)}
+              onPauseRoute={() => handlePauseRoute(selectedRoute.id)}
+              onCompleteRoute={() => handleCompleteRoute(selectedRoute.id)}
+            />
+          )}
         </div>
       )}
 

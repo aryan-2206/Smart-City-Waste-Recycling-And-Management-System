@@ -16,6 +16,38 @@ const initialState = {
   error: null
 };
 
+// Mock users database
+const mockUsers = {
+  admin: {
+    id: 'admin-001',
+    email: 'admin@wastemanagement.com',
+    password: 'admin123',
+    name: 'System Administrator',
+    role: 'admin',
+    phone: '+1-555-0100',
+    department: 'System Administration'
+  },
+  driver: {
+    id: 'driver-001',
+    email: 'driver@wastemanagement.com',
+    password: 'driver123',
+    name: 'Raj Kumar',
+    role: 'driver',
+    phone: '+1-555-0101',
+    licenseNumber: 'DRV-001',
+    truckId: 'TRK-001'
+  },
+  user: {
+    id: 'user-001',
+    email: 'user@wastemanagement.com',
+    password: 'user123',
+    name: 'John Doe',
+    role: 'user',
+    phone: '+1-555-0102',
+    address: '123 Main St, City'
+  }
+};
+
 // Reducer
 const authReducer = (state, action) => {
   switch (action.type) {
@@ -94,25 +126,31 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       dispatch({ type: AUTH_START });
-      // Mock login for now - replace with actual API call
+      
+      // Find user in mock database
+      const foundUser = Object.values(mockUsers).find(user => 
+        user.email === email && user.password === password
+      );
+      
+      if (!foundUser) {
+        throw new Error('Invalid email or password');
+      }
+      
+      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const mockUser = {
-        id: 1,
-        email,
-        name: 'Test User',
-        role: 'admin'
-      };
+      const token = `mock-token-${foundUser.id}-${Date.now()}`;
       
-      localStorage.setItem('token', 'mock-token');
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(foundUser));
       
       dispatch({
         type: AUTH_SUCCESS,
-        payload: mockUser
+        payload: foundUser
       });
       
-      return { data: { user: mockUser } };
+      console.log('Login successful - User:', foundUser);
+      return { data: { user: foundUser } };
     } catch (error) {
       dispatch({
         type: AUTH_FAIL,
@@ -125,25 +163,39 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       dispatch({ type: AUTH_START });
-      // Mock registration for now - replace with actual API call
+      
+      // Check if email already exists
+      const existingUser = Object.values(mockUsers).find(user => 
+        user.email === userData.email
+      );
+      
+      if (existingUser) {
+        throw new Error('Email already registered');
+      }
+      
+      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const mockUser = {
-        id: 2,
+      const newUser = {
+        id: `user-${Date.now()}`,
         email: userData.email,
         name: userData.name,
-        role: userData.role || 'operator'
+        role: userData.role || 'user',
+        phone: userData.phone || '',
+        address: userData.address || ''
       };
       
-      localStorage.setItem('token', 'mock-token');
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      const token = `mock-token-${newUser.id}-${Date.now()}`;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(newUser));
       
       dispatch({
         type: AUTH_SUCCESS,
-        payload: mockUser
+        payload: newUser
       });
       
-      return { data: { user: mockUser } };
+      return { data: { user: newUser } };
     } catch (error) {
       dispatch({
         type: AUTH_FAIL,
