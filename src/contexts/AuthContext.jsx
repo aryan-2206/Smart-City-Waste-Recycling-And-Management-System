@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import authService from '../services/authService';
 
 // Action types
 const AUTH_START = 'AUTH_START';
@@ -72,25 +71,48 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    // Initialize auth state from localStorage
-    const user = authService.getCurrentUser();
-    if (user) {
-      dispatch({
-        type: AUTH_SUCCESS,
-        payload: user
-      });
+    try {
+      // Initialize auth state from localStorage
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      if (token && user) {
+        const parsedUser = JSON.parse(user);
+        dispatch({
+          type: AUTH_SUCCESS,
+          payload: parsedUser
+        });
+      }
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      // Clear corrupted data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
   }, []);
 
   const login = async (email, password) => {
     try {
       dispatch({ type: AUTH_START });
-      const response = await authService.login(email, password);
+      // Mock login for now - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockUser = {
+        id: 1,
+        email,
+        name: 'Test User',
+        role: 'admin'
+      };
+      
+      localStorage.setItem('token', 'mock-token');
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
       dispatch({
         type: AUTH_SUCCESS,
-        payload: response.data.user
+        payload: mockUser
       });
-      return response;
+      
+      return { data: { user: mockUser } };
     } catch (error) {
       dispatch({
         type: AUTH_FAIL,
@@ -103,12 +125,25 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       dispatch({ type: AUTH_START });
-      const response = await authService.register(userData);
+      // Mock registration for now - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockUser = {
+        id: 2,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role || 'operator'
+      };
+      
+      localStorage.setItem('token', 'mock-token');
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
       dispatch({
         type: AUTH_SUCCESS,
-        payload: response.data.user
+        payload: mockUser
       });
-      return response;
+      
+      return { data: { user: mockUser } };
     } catch (error) {
       dispatch({
         type: AUTH_FAIL,
@@ -120,21 +155,31 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authService.logout();
-      dispatch({ type: LOGOUT });
+      // Mock logout - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Logout error:', error);
     }
+    
+    dispatch({ type: LOGOUT });
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   const updateProfile = async (userData) => {
     try {
-      const response = await authService.updateProfile(userData);
+      // Mock profile update - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedUser = { ...state.user, ...userData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
       dispatch({
         type: UPDATE_USER,
-        payload: response.data.user
+        payload: userData
       });
-      return response;
+      
+      return { data: { user: updatedUser } };
     } catch (error) {
       dispatch({
         type: AUTH_FAIL,
@@ -155,9 +200,13 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     clearError,
-    isAuthenticated: authService.isAuthenticated(),
-    hasRole: authService.hasRole.bind(authService),
-    hasPermission: authService.hasPermission.bind(authService)
+    isAuthenticated: !!localStorage.getItem('token') && !!localStorage.getItem('user'),
+    hasRole: (role) => state.user && state.user.role === role,
+    hasPermission: (permission) => {
+      if (!state.user) return false;
+      if (state.user.role === 'admin') return true;
+      return state.user.permissions && state.user.permissions[permission];
+    }
   };
 
   return (

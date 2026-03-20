@@ -15,23 +15,31 @@ import './App.css';
 
 function App() {
   return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="report" element={<ReportBin />} />
+          <Route path="assignments" element={<Assignments />} />
+          <Route path="routes" element={<RoutesPage />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="inventory" element={<Inventory />} />
+          <Route path="fleet" element={<Fleet />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function AppWithProvider() {
+  return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="report" element={<ReportBin />} />
-            <Route path="assignments" element={<Assignments />} />
-            <Route path="routes" element={<RoutesPage />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="fleet" element={<Fleet />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <App />
     </AuthProvider>
   );
 }
+
+export default AppWithProvider;
