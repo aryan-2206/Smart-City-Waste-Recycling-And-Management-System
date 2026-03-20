@@ -284,6 +284,19 @@ const Fleet = () => {
     addNotification(`Opening message app for driver: ${driver}`, 'success');
   };
 
+  // Initialize fleet data in localStorage if not exists
+  useEffect(() => {
+    const storedFleet = localStorage.getItem('fleet');
+    if (!storedFleet) {
+      localStorage.setItem('fleet', JSON.stringify(fleet));
+    }
+  }, []);
+
+  // Save fleet data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('fleet', JSON.stringify(fleet));
+  }, [fleet]);
+
   const activeVehicles = fleet.filter(v => v.status === 'active').length;
   const maintenanceVehicles = fleet.filter(v => v.status === 'maintenance').length;
   const totalRevenue = fleet.reduce((sum, v) => sum + v.revenue, 0);

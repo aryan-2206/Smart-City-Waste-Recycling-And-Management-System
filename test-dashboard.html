@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test Instructions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-step {
+            background: #f0f9ff;
+            border: 1px solid #0284c7;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .expected {
+            background: #f0fdf4;
+            border-color: #16a34a;
+        }
+        .code {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 8px;
+            font-family: monospace;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Smart Waste Management - Dynamic Dashboard Test</h1>
+    
+    <div class="test-step">
+        <h2>📋 Initial State Verification</h2>
+        <p>When you first load the application, the dashboard should show:</p>
+        <ul>
+            <li><strong>Total Bins:</strong> 0 (or minimum 128 if calculated)</li>
+            <li><strong>Reported Full:</strong> 0</li>
+            <li><strong>Pending Pickups:</strong> 0</li>
+            <li><strong>Active Trucks:</strong> 0</li>
+            <li><strong>Charts:</strong> Empty/zero values</li>
+            <li><strong>Recent Reports:</strong> No reports</li>
+        </ul>
+    </div>
+
+    <div class="test-step expected">
+        <h2>✅ Dynamic Update Test</h2>
+        <p>Follow these steps to verify dynamic updates:</p>
+        <ol>
+            <li><strong>Navigate to Report Bin page</strong></li>
+            <li><strong>Fill out and submit a report:</strong>
+                <ul>
+                    <li>Bin ID: B-001</li>
+                    <li>Area: North Sector</li>
+                    <li>Waste Type: Mixed Waste</li>
+                    <li>Urgency: High</li>
+                    <li>Description: Test report</li>
+                    <li>Reporter Name: Test User</li>
+                </ul>
+            </li>
+            <li><strong>Return to Dashboard</strong></li>
+            <li><strong>Expected changes:</strong>
+                <ul>
+                    <li>Reported Full should increase to 1</li>
+                    <li>Recent Reports should show your new report</li>
+                    <li>Area chart should show 1 report for North Sector</li>
+                    <li>Weekly chart should show 1 report for today</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="test-step">
+        <h2>🔄 Real-time Updates</h2>
+        <p>The dashboard should automatically update every 5 seconds when data changes.</p>
+        <p>You can also click the "Refresh Data" button to manually update.</p>
+    </div>
+
+    <div class="test-step">
+        <h2>📊 Data Persistence</h2>
+        <p>All data is stored in localStorage. You can verify this by:</p>
+        <div class="code">
+            // Open browser console and run:
+            console.log('Reports:', JSON.parse(localStorage.getItem('wasteReports')));
+            console.log('Assignments:', JSON.parse(localStorage.getItem('assignments')));
+            console.log('Fleet:', JSON.parse(localStorage.getItem('fleet')));
+        </div>
+    </div>
+
+    <div class="test-step expected">
+        <h2>🎯 Expected Features Working</h2>
+        <ul>
+            <li>✅ Dashboard starts with zero values</li>
+            <li>✅ Submitting reports updates dashboard stats</li>
+            <li>✅ Charts update with real data</li>
+            <li>✅ Recent reports show latest entries</li>
+            <li>✅ Data persists across page refreshes</li>
+            <li>✅ Real-time updates every 5 seconds</li>
+            <li>✅ Manual refresh button works</li>
+        </ul>
+    </div>
+
+    <div class="test-step">
+        <h2>🚀 Additional Tests</h2>
+        <p>For comprehensive testing:</p>
+        <ol>
+            <li>Test multiple reports in different areas</li>
+            <li>Navigate to Assignments page and assign drivers</li>
+            <li>Check Fleet page for truck status</li>
+            <li>Verify all dashboard metrics update correctly</li>
+            <li>Test the notification system</li>
+        </ol>
+    </div>
+</body>
+</html>

@@ -1,38 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Trash2, AlertTriangle, Clock, TrendingUp, MapPin, Users } from 'lucide-react';
 
-const stats = [
-  { label: 'Total Bins', value: 128, icon: Trash2, color: 'bg-blue-500' },
-  { label: 'Reported Full', value: 12, icon: AlertTriangle, color: 'bg-red-500' },
-  { label: 'Pending Pickups', value: 4, icon: Clock, color: 'bg-yellow-500' },
-  { label: 'Active Trucks', value: 8, icon: Users, color: 'bg-green-500' },
+// Initial zero stats
+const initialStats = [
+  { label: 'Total Bins', value: 0, icon: Trash2, color: 'bg-blue-500' },
+  { label: 'Reported Full', value: 0, icon: AlertTriangle, color: 'bg-red-500' },
+  { label: 'Pending Pickups', value: 0, icon: Clock, color: 'bg-yellow-500' },
+  { label: 'Active Trucks', value: 0, icon: Users, color: 'bg-green-500' },
 ];
 
-const weeklyData = [
-  { day: 'Mon', collections: 45, reports: 12 },
-  { day: 'Tue', collections: 52, reports: 8 },
-  { day: 'Wed', collections: 38, reports: 15 },
-  { day: 'Thu', collections: 65, reports: 6 },
-  { day: 'Fri', collections: 48, reports: 10 },
-  { day: 'Sat', collections: 35, reports: 4 },
-  { day: 'Sun', collections: 25, reports: 2 },
+// Initial empty data
+const initialWeeklyData = [
+  { day: 'Mon', collections: 0, reports: 0 },
+  { day: 'Tue', collections: 0, reports: 0 },
+  { day: 'Wed', collections: 0, reports: 0 },
+  { day: 'Thu', collections: 0, reports: 0 },
+  { day: 'Fri', collections: 0, reports: 0 },
+  { day: 'Sat', collections: 0, reports: 0 },
+  { day: 'Sun', collections: 0, reports: 0 },
 ];
 
-const areaData = [
-  { name: 'North Sector', value: 35, color: '#3B82F6' },
-  { name: 'East Zone', value: 28, color: '#10B981' },
-  { name: 'Central', value: 22, color: '#F59E0B' },
-  { name: 'West District', value: 15, color: '#EF4444' },
-];
-
-const recentReports = [
-  { id: 'B-042', area: 'North Sector', time: '5 mins ago', status: 'pending' },
-  { id: 'B-018', area: 'East Zone', time: '12 mins ago', status: 'assigned' },
-  { id: 'B-091', area: 'Central', time: '25 mins ago', status: 'pending' },
-  { id: 'B-076', area: 'West District', time: '1 hour ago', status: 'completed' },
-  { id: 'B-033', area: 'North Sector', time: '2 hours ago', status: 'assigned' },
+const initialAreaData = [
+  { name: 'North Sector', value: 0, color: '#3B82F6' },
+  { name: 'East Zone', value: 0, color: '#10B981' },
+  { name: 'Central', value: 0, color: '#F59E0B' },
+  { name: 'West District', value: 0, color: '#EF4444' },
 ];
 
 export default function Dashboard() {
@@ -41,7 +35,142 @@ export default function Dashboard() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [stats, setStats] = useState(initialStats);
+  const [weeklyData, setWeeklyData] = useState(initialWeeklyData);
+  const [areaData, setAreaData] = useState(initialAreaData);
+  const [recentReports, setRecentReports] = useState([]);
   const navigate = useNavigate();
+
+  // Load data from localStorage and update dashboard
+  useEffect(() => {
+    const loadDashboardData = () => {
+      try {
+        // Get reports from localStorage
+        const storedReports = JSON.parse(localStorage.getItem('wasteReports') || '[]');
+        const storedAssignments = JSON.parse(localStorage.getItem('assignments') || '[]');
+        const storedFleet = JSON.parse(localStorage.getItem('fleet') || '[]');
+        
+        // Calculate stats
+        const totalBins = Math.max(128, storedReports.length * 10); // Dynamic based on reports
+        const reportedFull = storedReports.length;
+        const pendingPickups = storedAssignments.filter(a => a.status === 'pending').length;
+        const activeTrucks = storedFleet.filter(f => f.status === 'active').length;
+        
+        // Update stats
+        setStats([
+          { label: 'Total Bins', value: totalBins, icon: Trash2, color: 'bg-blue-500' },
+          { label: 'Reported Full', value: reportedFull, icon: AlertTriangle, color: 'bg-red-500' },
+          { label: 'Pending Pickups', value: pendingPickups, icon: Clock, color: 'bg-yellow-500' },
+          { label: 'Active Trucks', value: activeTrucks, icon: Users, color: 'bg-green-500' },
+        ]);
+        
+        // Update weekly data based on actual data
+        const today = new Date();
+        const weekData = [];
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dayName = days[date.getDay()];
+          
+          const dayReports = storedReports.filter(r => {
+            const reportDate = new Date(r.timestamp || Date.now());
+            return reportDate.toDateString() === date.toDateString();
+          }).length;
+          
+          const dayCollections = storedAssignments.filter(a => {
+            const assignDate = new Date(a.createdAt || Date.now());
+            return assignDate.toDateString() === date.toDateString() && a.status === 'completed';
+          }).length;
+          
+          weekData.push({
+            day: dayName,
+            collections: dayCollections,
+            reports: dayReports
+          });
+        }
+        
+        setWeeklyData(weekData);
+        
+        // Update area data based on reports
+        const areaCounts = {
+          'North Sector': 0,
+          'East Zone': 0,
+          'Central': 0,
+          'West District': 0
+        };
+        
+        storedReports.forEach(report => {
+          if (areaCounts.hasOwnProperty(report.area)) {
+            areaCounts[report.area]++;
+          }
+        });
+        
+        setAreaData([
+          { name: 'North Sector', value: areaCounts['North Sector'], color: '#3B82F6' },
+          { name: 'East Zone', value: areaCounts['East Zone'], color: '#10B981' },
+          { name: 'Central', value: areaCounts['Central'], color: '#F59E0B' },
+          { name: 'West District', value: areaCounts['West District'], color: '#EF4444' },
+        ]);
+        
+        // Update recent reports
+        const sortedReports = storedReports
+          .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+          .slice(0, 5)
+          .map(report => ({
+            id: report.binId || `B-${Math.floor(Math.random() * 1000)}`,
+            area: report.area || 'Unknown',
+            time: report.timestamp ? formatTimeAgo(new Date(report.timestamp)) : 'Just now',
+            status: mapReportStatus(report.urgency)
+          }));
+        
+        setRecentReports(sortedReports);
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    };
+    
+    // Initial load
+    loadDashboardData();
+    
+    // Set up interval for real-time updates
+    const interval = setInterval(loadDashboardData, 5000); // Update every 5 seconds
+    
+    // Listen for storage changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'wasteReports' || e.key === 'assignments' || e.key === 'fleet') {
+        loadDashboardData();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  
+  // Helper functions
+  const formatTimeAgo = (date) => {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} mins ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
+  };
+  
+  const mapReportStatus = (urgency) => {
+    switch (urgency) {
+      case 'high': return 'pending';
+      case 'medium': return 'assigned';
+      case 'low': return 'scheduled';
+      default: return 'pending';
+    }
+  };
 
   const handleQuickReport = () => {
     navigate('/report');
@@ -58,10 +187,98 @@ export default function Dashboard() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate data refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsRefreshing(false);
-    addNotification('Dashboard data refreshed successfully!');
+    try {
+      // Trigger dashboard data reload
+      const loadDashboardData = async () => {
+        const storedReports = JSON.parse(localStorage.getItem('wasteReports') || '[]');
+        const storedAssignments = JSON.parse(localStorage.getItem('assignments') || '[]');
+        const storedFleet = JSON.parse(localStorage.getItem('fleet') || '[]');
+        
+        // Calculate stats
+        const totalBins = Math.max(128, storedReports.length * 10);
+        const reportedFull = storedReports.length;
+        const pendingPickups = storedAssignments.filter(a => a.status === 'pending').length;
+        const activeTrucks = storedFleet.filter(f => f.status === 'active').length;
+        
+        setStats([
+          { label: 'Total Bins', value: totalBins, icon: Trash2, color: 'bg-blue-500' },
+          { label: 'Reported Full', value: reportedFull, icon: AlertTriangle, color: 'bg-red-500' },
+          { label: 'Pending Pickups', value: pendingPickups, icon: Clock, color: 'bg-yellow-500' },
+          { label: 'Active Trucks', value: activeTrucks, icon: Users, color: 'bg-green-500' },
+        ]);
+        
+        // Update weekly data
+        const today = new Date();
+        const weekData = [];
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dayName = days[date.getDay()];
+          
+          const dayReports = storedReports.filter(r => {
+            const reportDate = new Date(r.timestamp || Date.now());
+            return reportDate.toDateString() === date.toDateString();
+          }).length;
+          
+          const dayCollections = storedAssignments.filter(a => {
+            const assignDate = new Date(a.createdAt || Date.now());
+            return assignDate.toDateString() === date.toDateString() && a.status === 'completed';
+          }).length;
+          
+          weekData.push({
+            day: dayName,
+            collections: dayCollections,
+            reports: dayReports
+          });
+        }
+        
+        setWeeklyData(weekData);
+        
+        // Update area data
+        const areaCounts = {
+          'North Sector': 0,
+          'East Zone': 0,
+          'Central': 0,
+          'West District': 0
+        };
+        
+        storedReports.forEach(report => {
+          if (areaCounts.hasOwnProperty(report.area)) {
+            areaCounts[report.area]++;
+          }
+        });
+        
+        setAreaData([
+          { name: 'North Sector', value: areaCounts['North Sector'], color: '#3B82F6' },
+          { name: 'East Zone', value: areaCounts['East Zone'], color: '#10B981' },
+          { name: 'Central', value: areaCounts['Central'], color: '#F59E0B' },
+          { name: 'West District', value: areaCounts['West District'], color: '#EF4444' },
+        ]);
+        
+        // Update recent reports
+        const sortedReports = storedReports
+          .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+          .slice(0, 5)
+          .map(report => ({
+            id: report.binId || `B-${Math.floor(Math.random() * 1000)}`,
+            area: report.area || 'Unknown',
+            time: report.timestamp ? formatTimeAgo(new Date(report.timestamp)) : 'Just now',
+            status: mapReportStatus(report.urgency)
+          }));
+        
+        setRecentReports(sortedReports);
+      };
+      
+      await loadDashboardData();
+      addNotification('Dashboard data refreshed successfully!');
+    } catch (error) {
+      console.error('Error refreshing dashboard:', error);
+      addNotification('Failed to refresh dashboard data', 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const addNotification = (message, type = 'success') => {
