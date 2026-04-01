@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['citizen', 'collector', 'admin'],
+        enum: ['citizen', 'Swachhta Mitra', 'admin'],
         default: 'citizen'
     },
     zone: {
@@ -43,6 +43,18 @@ const UserSchema = new mongoose.Schema({
     rewardPoints: {
         type: Number,
         default: 0
+    },
+    totalScore: {
+        type: Number,
+        default: 0
+    },
+    dailyScore: {
+        type: Number,
+        default: 0
+    },
+    lastScoreUpdate: {
+        type: Date,
+        default: null
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
@@ -71,6 +83,28 @@ const UserSchema = new mongoose.Schema({
         default: ""
     }
 }, { timestamps: true });
+
+// 🔥 AUTHORITATIVE SCORING SYSTEM (Backend Driven)
+UserSchema.methods.addPoints = function (points) {
+    const now = new Date();
+    const last = this.lastScoreUpdate;
+    
+    // Check if same day (UTC for absolute accuracy)
+    const isSameDay = last && new Date(last).toDateString() === now.toDateString();
+
+    if (isSameDay) {
+        this.dailyScore += points;
+    } else {
+        // Reset daily if it's a new day
+        this.dailyScore = points;
+    }
+
+    this.totalScore += points;
+    this.rewardPoints = this.totalScore; // Keep rewardPoints in sync
+    this.lastScoreUpdate = now;
+
+    return this.save();
+};
 
 // Generate and hash password token
 UserSchema.methods.getResetPasswordToken = function () {

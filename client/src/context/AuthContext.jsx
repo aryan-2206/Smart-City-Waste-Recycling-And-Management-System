@@ -6,38 +6,61 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser && savedUser !== 'undefined') {
+            try {
+                let parsedUser = JSON.parse(savedUser);
+                if (parsedUser.role === 'collector') parsedUser.role = 'Swachhta Mitra';
+                return parsedUser;
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
+    });
+    const [loading, setLoading] = useState(!user && !!localStorage.getItem('token'));
     const [token, setToken] = useState(localStorage.getItem('token'));
 
     useEffect(() => {
-        if (token) {
-            axios.defaults.headers.common['x-auth-token'] = token;
-            // In a real app, you might want to fetch the user object from the backend here
-            try {
-                const savedUser = localStorage.getItem('user');
-                if (savedUser && savedUser !== 'undefined') {
-                    setUser(JSON.parse(savedUser));
+        const loadUser = async () => {
+            if (token) {
+                axios.defaults.headers.common['x-auth-token'] = token;
+                try {
+                    const res = await axios.get('/api/auth/profile');
+                    let freshUser = res.data;
+                    if (freshUser.role === 'collector') freshUser.role = 'Swachhta Mitra';
+                    setUser(freshUser);
+                    localStorage.setItem('user', JSON.stringify(freshUser));
+                } catch (err) {
+                    console.error('Error fetching user profile:', err);
+                    if (!user) { // If no cached user, then logout
+                        localStorage.removeItem('user');
+                        localStorage.removeItem('token');
+                        setUser(null);
+                        setToken(null);
+                    }
                 }
-            } catch (err) {
-                console.error('Error parsing user from localStorage:', err);
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
+            } else {
+                delete axios.defaults.headers.common['x-auth-token'];
+                setUser(null);
             }
-        } else {
-            delete axios.defaults.headers.common['x-auth-token'];
-        }
-        setLoading(false);
+            setLoading(false);
+        };
+
+        loadUser();
     }, [token]);
 
     const signup = async (userData) => {
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/signup', userData);
+            const res = await axios.post('/api/auth/signup', userData);
+            let user = res.data.user;
+            if (user.role === 'collector') user.role = 'Swachhta Mitra';
             setToken(res.data.token);
-            setUser(res.data.user);
+            setUser(user);
             localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
-            return res.data;
+            localStorage.setItem('user', JSON.stringify(user));
+            return { ...res.data, user };
         } catch (error) {
             throw new Error(error.response?.data?.message || 'Registration failed');
         }
@@ -45,12 +68,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+            const res = await axios.post('/api/auth/login', { email, password });
+            let user = res.data.user;
+            if (user.role === 'collector') user.role = 'Swachhta Mitra';
             setToken(res.data.token);
-            setUser(res.data.user);
+            setUser(user);
             localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
-            return res.data;
+            localStorage.setItem('user', JSON.stringify(user));
+            return { ...res.data, user };
         } catch (error) {
             throw new Error(error.response?.data?.message || 'Login failed');
         }
@@ -58,12 +83,14 @@ export const AuthProvider = ({ children }) => {
 
     const googleLogin = async (credentialToken, selectedRole) => {
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/google', { token: credentialToken, role: selectedRole });
+            const res = await axios.post('/api/auth/google', { token: credentialToken, role: selectedRole });
+            let user = res.data.user;
+            if (user.role === 'collector') user.role = 'Swachhta Mitra';
             setToken(res.data.token);
-            setUser(res.data.user);
+            setUser(user);
             localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
-            return res.data;
+            localStorage.setItem('user', JSON.stringify(user));
+            return { ...res.data, user };
         } catch (error) {
             throw new Error(error.response?.data?.message || 'Google Login failed');
         }
@@ -74,6 +101,8 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('citizen_dashboard_data');
+        localStorage.removeItem('collector_dashboard_data');
     };
 
     const updateUser = (updatedUser) => {

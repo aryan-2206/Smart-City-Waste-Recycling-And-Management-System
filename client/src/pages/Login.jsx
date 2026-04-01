@@ -63,7 +63,7 @@ const Login = () => {
                                         name="email"
                                         type="email"
                                         required
-                                        className="input-field pl-12"
+                                        className="input-field px-12"
                                         placeholder="name@company.com"
                                         value={credentials.email}
                                         onChange={onChange}
@@ -79,7 +79,7 @@ const Login = () => {
                                         name="password"
                                         type="password"
                                         required
-                                        className="input-field pl-12"
+                                        className="input-field px-12"
                                         placeholder="••••••••"
                                         value={credentials.password}
                                         onChange={onChange}

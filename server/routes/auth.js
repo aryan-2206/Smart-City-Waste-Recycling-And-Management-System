@@ -127,6 +127,23 @@ router.get('/users', async (req, res) => {
     }
 });
 
+// @route   GET /api/auth/profile
+// @desc    Get current user profile
+router.get('/profile', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const userObj = user.toObject();
+        userObj.id = userObj._id;
+        res.json(userObj);
+    } catch (err) {
+        console.error('Fetch Profile Error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   PUT /api/auth/profile
 // @desc    Update user profile
 router.put('/profile', auth, async (req, res) => {

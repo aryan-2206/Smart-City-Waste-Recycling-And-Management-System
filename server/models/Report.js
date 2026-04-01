@@ -15,19 +15,30 @@ const ReportSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    landmark: {
-        type: String
+    city: {
+        type: String,
+        default: 'Pune'
     },
     zone: {
         type: String,
         required: true
     },
-    description: {
+    area: {
         type: String
     },
-    photo: {
-        type: String // URL or path to the uploaded image
+    landmark: {
+        type: String
     },
+    contactNumber: {
+        type: String
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    photos: [{
+        type: String // URLs or paths to the uploaded images
+    }],
     urgency: {
         type: String,
         enum: ['Low', 'Medium', 'High'],
@@ -41,12 +52,22 @@ const ReportSchema = new mongoose.Schema({
     collectorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    evidenceUploaded: {
+        type: Boolean,
+        default: false
+    },
+    initialPhotoCount: {
+        type: Number
     }
 }, { timestamps: true });
 
 // Indexing for faster queries as per Part 3 requirements
 ReportSchema.index({ zone: 1, status: 1 });
-ReportSchema.index({ citizenId: 1 });
+ReportSchema.index({ citizenId: 1, status: 1 });
+ReportSchema.index({ citizenId: 1, createdAt: -1 });
+ReportSchema.index({ collectorId: 1, status: 1 });
+ReportSchema.index({ collectorId: 1, status: 1, updatedAt: -1 });
 ReportSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Report', ReportSchema);

@@ -7,10 +7,15 @@ import {
     PieChart, Pie, Cell, LineChart, Line, Legend 
 } from 'recharts';
 import PageHeader from '../../components/PageHeader';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+    const [data, setData] = useState(() => {
+        const cached = localStorage.getItem('adminDashboardData');
+        return cached ? JSON.parse(cached) : null;
+    });
+    const [loading, setLoading] = useState(!data);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -19,21 +24,23 @@ const AdminDashboard = () => {
             try {
                 const token = localStorage.getItem('token');
                 const [dashRes, analyticsRes, trendsRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/dashboard/admin', { headers: { 'x-auth-token': token } }),
-                    axios.get('http://localhost:5000/api/analytics/overview', { headers: { 'x-auth-token': token } }),
-                    axios.get('http://localhost:5000/api/analytics/trends', { headers: { 'x-auth-token': token } })
+                    axios.get('/api/dashboard/admin', { headers: { 'x-auth-token': token } }),
+                    axios.get('/api/analytics/overview', { headers: { 'x-auth-token': token } }),
+                    axios.get('/api/analytics/trends', { headers: { 'x-auth-token': token } })
                 ]);
                 
-                setData({
+                const newData = {
                     ...dashRes.data,
                     stats: { 
                         ...dashRes.data.stats, 
                         ...analyticsRes.data.stats 
                     },
                     zoneData: analyticsRes.data.zoneData,
-                    topCollectors: analyticsRes.data.topCollectors,
+                    topSwachhtaMitras: analyticsRes.data.topSwachhtaMitras,
                     trends: trendsRes.data
-                });
+                };
+                setData(newData);
+                localStorage.setItem('adminDashboardData', JSON.stringify(newData));
             } catch (err) {
                 setError('Failed to fetch admin analytics. Please ensure "recharts" is installed.');
                 console.error(err);
@@ -52,7 +59,7 @@ const AdminDashboard = () => {
         problemAreas: [], 
         zoneData: [],
         trends: [],
-        topCollectors: []
+        topSwachhtaMitras: []
     };
 
     const statusPieData = [
@@ -65,7 +72,7 @@ const AdminDashboard = () => {
         <div className="max-w-7xl mx-auto animate-fade-in">
             <div className="flex items-center justify-between mb-10">
                 <PageHeader 
-                    title="Hello, Admin!" 
+                    title={`Hello, ${user?.name || 'Admin'}!`} 
                     subtitle="City-wide waste management overview" 
                     icon={LayoutGrid}
                 />
@@ -124,7 +131,7 @@ const AdminDashboard = () => {
                         <span className="text-xs font-black uppercase text-indigo-600/70 tracking-widest">Active</span>
                     </div>
                     <span className="text-4xl font-black text-indigo-700 tracking-tight">{stats.collectorsCount || 0}</span>
-                    <p className="text-indigo-600/50 text-xs font-bold mt-1">Collectors in city</p>
+                    <p className="text-indigo-600/50 text-xs font-bold mt-1">Swachhta Mitras in city</p>
                 </div>
             </div>
 
@@ -272,7 +279,7 @@ const AdminDashboard = () => {
                                 onClick={async () => {
                                     const token = localStorage.getItem('token');
                                     try {
-                                        await axios.post('http://localhost:5000/api/badges/seed', {}, { headers: { 'x-auth-token': token } });
+                                        await axios.post('/api/badges/seed', {}, { headers: { 'x-auth-token': token } });
                                         alert('Badges seeded successfully!');
                                     } catch (err) {
                                         alert('Failed to seed badges');
@@ -295,23 +302,23 @@ const AdminDashboard = () => {
                     <div className="glass-card p-10 rounded-[2.5rem] shadow-xl border border-white/40">
                         <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-3">
                             <TrendingUp className="text-emerald-500" size={24} />
-                            Top Collectors
+                            Top Swachhta Mitras
                         </h2>
                         <div className="space-y-4">
-                            {topCollectors.length > 0 ? (
-                                topCollectors.map((collector, index) => (
+                            {topSwachhtaMitras.length > 0 ? (
+                                topSwachhtaMitras.map((sm, index) => (
                                     <div key={index} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-white transition-all group">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all font-black text-slate-400 text-sm">
                                                 #{index + 1}
                                             </div>
                                             <div>
-                                                <span className="font-black text-slate-800 block text-sm">{collector.name}</span>
+                                                <span className="font-black text-slate-800 block text-sm">{sm.name}</span>
                                                 <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Performance High</span>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-indigo-600 font-extrabold text-lg block">{collector.completed}</span>
+                                            <span className="text-indigo-600 font-extrabold text-lg block">{sm.completed}</span>
                                             <span className="text-slate-400 text-[10px] uppercase font-black">Resolved</span>
                                         </div>
                                     </div>

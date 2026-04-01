@@ -1,5 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import axios from 'axios';
+import { useState, useEffect, useMemo } from 'react';
 import {
     LayoutDashboard,
     PlusCircle,
@@ -24,6 +26,44 @@ import { motion, AnimatePresence } from 'framer-motion';
 const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
     const { logout, user } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const [pickupCount, setPickupCount] = useState(0);
+    const [notifCount, setNotifCount] = useState(0);
+
+    useEffect(() => {
+        if (user) {
+            fetchCounts();
+            const interval = setInterval(fetchCounts, 5000); // 5s refresh for live-feel
+            return () => clearInterval(interval);
+        }
+    }, [role, user]);
+
+    const fetchCounts = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            // Fetch Pickups if collector
+            if (role === 'Swachhta Mitra') {
+                const res = await axios.get('/api/reports', {
+                    headers: { 'x-auth-token': token }
+                });
+                const activePickups = (res.data.reports || []).filter(r => r.status !== 'Resolved').length;
+                setPickupCount(activePickups);
+            }
+
+            // Fetch Unread Notifications for everyone
+            const notifRes = await axios.get(`/api/notifications?t=${Date.now()}`, {
+                headers: { 'x-auth-token': token }
+            });
+            
+            const rawData = notifRes.data;
+            const notifs = Array.isArray(rawData) ? rawData : (rawData.notifications || []);
+            const unread = notifs.filter(n => !n.isRead).length;
+            setNotifCount(unread);
+        } catch (err) {
+            console.error('Failed to fetch counts:', err);
+        }
+    };
 
     const menuItems = {
         citizen: [
@@ -37,17 +77,29 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
             { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
             { name: 'All Reports', path: '/admin/reports', icon: FileText },
             { name: 'Manage Users', path: '/admin/users', icon: UsersIcon },
-            { name: 'Profile', path: '/citizen/profile', icon: User }, // Reuse citizen profile for now
+            { name: 'Profile', path: '/admin/profile', icon: User }, // Shared profile component
         ],
-        collector: [
-            { name: 'Dashboard', path: '/collector/dashboard', icon: LayoutDashboard },
-            { name: 'All Pickups', path: '/collector/pickups', icon: Truck },
-            { name: 'Badges', path: '/collector/badges', icon: Award },
-            { name: 'Profile', path: '/citizen/profile', icon: User }, // Reuse citizen profile for now
+        'Swachhta Mitra': [
+            { name: 'Dashboard', path: '/swachhta-mitra/dashboard', icon: LayoutDashboard },
+            { name: 'All Pickups', path: '/swachhta-mitra/pickups', icon: Truck },
+            { name: 'Badges', path: '/swachhta-mitra/badges', icon: Award },
+            { name: 'Notification', path: '/swachhta-mitra/notification', icon: Bell },
+            { name: 'Profile', path: '/swachhta-mitra/profile', icon: User },
         ]
     };
 
-    const currentItems = menuItems[role] || menuItems['citizen'];
+    const currentItems = useMemo(() => {
+        const baseItems = menuItems[role] || menuItems['citizen'];
+        return baseItems.map(item => {
+            if (role === 'Swachhta Mitra' && item.name === 'All Pickups') {
+                return { ...item, badge: pickupCount > 0 ? pickupCount : null };
+            }
+            if (item.name === 'Notification') {
+                return { ...item, badge: notifCount > 0 ? notifCount : null };
+            }
+            return item;
+        });
+    }, [role, pickupCount, notifCount]);
 
     const sidebarContent = (
         <div className="w-[260px] h-screen bg-white dark:bg-[#0B1121] flex flex-col p-4 relative font-sans transition-colors duration-300">
@@ -91,6 +143,13 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
                                 <span className="text-[0.95rem] tracking-tight" style={{ fontWeight: isActive ? 700 : 600 }}>
                                     {item.name}
                                 </span>
+                                {item.badge && (
+                                    <span className={`ml-auto w-5 h-5 flex items-center justify-center text-[10px] font-black rounded-full shadow-sm transition-all shrink-0 ${
+                                        isActive ? 'bg-white text-emerald-600' : 'bg-rose-500 text-white shadow-rose-500/20'
+                                    }`}>
+                                        {item.badge}
+                                    </span>
+                                )}
                             </div>
                         )}
                     </NavLink>
@@ -112,15 +171,15 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
                 {/* User Row with Integrated Logout */}
                 <div className="flex items-center justify-between px-2 gap-3 mb-2">
                     <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-emerald-100 dark:border-emerald-900/30">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50 dark:bg-emerald-900/10">
                              <img 
-                                src={`https://ui-avatars.com/api/?name=${user?.name}&background=10b981&color=fff&bold=true`} 
+                                src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=10b981&color=fff&bold=true`} 
                                 alt="avatar" 
                                 className="w-full h-full object-cover"
                              />
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-bold text-[#1a202c] dark:text-white truncate tracking-tight leading-tight">{user?.name?.split(' ')[0]}</span>
+                            <span className="text-sm font-bold text-[#1a202c] dark:text-white truncate tracking-tight leading-tight">{user?.name}</span>
                             <span className="text-[0.65rem] text-gray-400 truncate tracking-tight capitalize">{user?.role}</span>
                         </div>
                     </div>

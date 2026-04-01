@@ -24,7 +24,7 @@ const ResetPasswordPage = () => {
         setError('');
         
         try {
-            const { data } = await axios.put(`http://localhost:5000/api/auth/reset-password/${token}`, { password });
+            const { data } = await axios.put(`/api/auth/reset-password/${token}`, { password });
             setMessage(data.message || 'Password reset successful!');
             setTimeout(() => navigate('/login'), 3000);
         } catch (err) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-    Truck, Award, Star, Zap, Shield, Target, Flame, Heart, Leaf, Recycle, 
+import {
+    Truck, Award, Star, Zap, Shield, Target, Flame, Heart, Leaf, Recycle,
     CheckCircle, Lock, Trophy, MapPin, Navigation, Map, Ruler, Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -9,15 +9,20 @@ import PageHeader from '../../components/PageHeader';
 
 const CollectorBadges = () => {
     const { token } = useAuth();
-    const [stats, setStats] = useState({ completed: 0 });
+    const [stats, setStats] = useState(() => {
+        const cached = localStorage.getItem('collector_dashboard_data');
+        const parsed = cached ? JSON.parse(cached) : null;
+        return { completed: parsed?.stats?.completed || 0 };
+    });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/dashboard/collector', {
+                const res = await axios.get('/api/dashboard/collector', {
                     headers: { 'x-auth-token': token }
                 });
                 setStats({ completed: res.data?.stats?.completed || 0 });
+                localStorage.setItem('collectorDashboardData', JSON.stringify(res.data));
             } catch (err) {
                 console.error('Error fetching stats:', err);
             }
@@ -54,25 +59,24 @@ const CollectorBadges = () => {
         <div className="max-w-7xl mx-auto space-y-10 animate-fade-in text-slate-800 dark:text-slate-100">
             <PageHeader title="Eco Achievements" subtitle={`You have unlocked ${unlockedCount} Badges`} icon={Trophy} />
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                 {badgeNames.map((name, i) => {
                     const isUnlocked = stats.completed >= (i + 1) * 2;
                     return (
-                        <div key={i} className="flex flex-col items-center text-center group">
-                            <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[2rem] flex items-center justify-center text-3xl mb-4 transition-all duration-300 relative border-2 ${
-                                isUnlocked 
-                                ? "bg-emerald-100/50 dark:bg-emerald-500/10 border-emerald-500 shadow-md scale-100" 
-                                : "bg-slate-50 dark:bg-slate-900 border-dashed border-slate-200 dark:border-slate-800 opacity-40"
-                            }`}>
-                                <Trophy size={36} className={isUnlocked ? "text-emerald-500" : "text-slate-300"} />
-                                {isUnlocked && <CheckCircle className="absolute -top-1 -right-1 text-emerald-500 bg-white rounded-full p-0.5" size={24} />}
-                                {!isUnlocked && <Lock className="absolute top-3 right-3 text-slate-300" size={14} />}
+                        <div key={i} className="flex flex-col items-center text-center group py-2">
+                            <div className={`w-32 h-32 sm:w-[150px] sm:h-[150px] rounded-[2rem] flex items-center justify-center transition-all duration-300 relative border-[1.5px] ${isUnlocked
+                                    ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 shadow-sm scale-100"
+                                    : "bg-slate-50 dark:bg-slate-900 border-dashed border-slate-200 dark:border-slate-800 opacity-40 shadow-inner"
+                                }`}>
+                                <Trophy size={42} className={isUnlocked ? "text-emerald-500" : "text-slate-300"} />
+                                {isUnlocked && <CheckCircle className="absolute -top-1 -right-1 text-emerald-500 bg-white dark:bg-slate-900 rounded-full p-0.5 border-2 border-white dark:border-slate-900" size={24} />}
+                                {!isUnlocked && <Lock className="absolute top-4 right-4 text-slate-300 opacity-50" size={14} />}
                             </div>
-                            <h4 className={`text-[12px] sm:text-sm font-bold capitalize leading-tight ${isUnlocked ? "text-slate-800 dark:text-slate-100" : "text-slate-400"}`}>
-                                {name.toLowerCase()}
+                            <h4 className={`text-[13px] sm:text-[14.5px] font-black capitalize mt-3 tracking-tight ${isUnlocked ? "text-slate-800 dark:text-slate-100" : "text-slate-400"}`}>
+                                {name}
                             </h4>
-                            <p className="text-[10px] font-bold text-slate-400 mt-1">
-                                {isUnlocked ? "Unlocked" : `Resolve ${ (i + 1) * 2 }`}
+                            <p className="text-[10.5px] font-bold text-slate-400/80 mt-1 uppercase tracking-widest">
+                                {isUnlocked ? "Unlocked" : `Resolve ${(i + 1) * 2}`}
                             </p>
                         </div>
                     );

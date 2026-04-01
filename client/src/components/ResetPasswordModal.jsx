@@ -31,7 +31,7 @@ const ResetPasswordModal = ({ isOpen, onClose }) => {
         setError('');
 
         try {
-            await axios.post('http://localhost:5000/api/auth/verify-email', { email: email.toLowerCase().trim() });
+            await axios.post('/api/auth/verify-email', { email: email.toLowerCase().trim() });
             // Email verified in DB
             setStep(2);
         } catch (err) {
@@ -58,7 +58,7 @@ const ResetPasswordModal = ({ isOpen, onClose }) => {
         setError('');
 
         try {
-            const { data } = await axios.post('http://localhost:5000/api/auth/direct-reset-password', { email: email.toLowerCase().trim(), password });
+            const { data } = await axios.post('/api/auth/direct-reset-password', { email: email.toLowerCase().trim(), password });
             setSuccessMessage(data.message || 'Password updated successfully!');
             setTimeout(() => {
                 handleClose();

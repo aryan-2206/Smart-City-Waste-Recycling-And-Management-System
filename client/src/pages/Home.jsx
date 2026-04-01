@@ -52,7 +52,7 @@ const Home = () => {
         {
             icon: <Truck className="text-emerald-500" />,
             title: "Smart Pickup",
-            desc: "Collectors get optimized routes and instant notifications for efficient collection."
+            desc: "Swachhta Mitras get optimized routes and instant notifications for efficient collection."
         },
         {
             icon: <BarChart3 className="text-emerald-500" />,
@@ -89,7 +89,7 @@ const Home = () => {
     // How It Works Steps
     const steps = [
         { title: 'Report Issue', desc: 'Take a photo of the waste, add a quick description, and our GPS handles the exact location.' },
-        { title: 'Smart Assignment', desc: 'The system automatically notifies the nearest collector and provides them with optimized routes.' },
+        { title: 'Smart Assignment', desc: 'The system automatically notifies the nearest Swachhta Mitra and provides them with optimized routes.' },
         { title: 'Clean & Reward', desc: 'Once resolved, the citizen gets a notification and earns Eco-Points for contributing to a cleaner city.' }
     ];
 
@@ -121,7 +121,7 @@ const Home = () => {
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500 text-[0.85em]">Waste Management</span>
                                 </h1>
                                 <p className="text-[8px] sm:text-base lg:text-xl text-slate-500 dark:text-slate-400 font-medium mb-2 max-w-2xl leading-relaxed">
-                                    A centralized platform connecting citizens, collectors, and admins to build a sustainable and waste-free future through data-driven action.
+                                    A centralized platform connecting citizens, Swachhta Mitras, and admins to build a sustainable and waste-free future through data-driven action.
                                 </p>
 
                                 <div className="space-y-4 mb-10">
@@ -305,7 +305,7 @@ const Home = () => {
                             >
                                 <h2 className="text-[10px] sm:text-4xl font-black text-slate-900 dark:text-white mb-1 sm:mb-4 tracking-tight">Why Choose EcoPulse?</h2>
                                 <p className="text-[8px] sm:text-lg text-slate-500 dark:text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
-                                    A decentralized platform connecting citizens, collectors, and admins to build a sustainable city with modern technology.
+                                    A decentralized platform connecting citizens, Swachhta Mitras, and admins to build a sustainable city with modern technology.
                                 </p>
                             </motion.div>
 

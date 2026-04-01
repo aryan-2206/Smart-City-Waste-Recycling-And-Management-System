@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-    AlertCircle, 
-    Camera, 
-    MapPin, 
-    Trash2, 
-    Send, 
-    Info, 
+import {
+    AlertCircle,
+    Camera,
+    MapPin,
+    Trash2,
+    Send,
+    Info,
     CheckCircle2,
     FileText,
     ArrowLeft,
     X,
-    ChevronDown
+    ChevronDown,
+    CloudUpload
 } from 'lucide-react';
 import axios from 'axios';
+import { compressImage } from '../../utils/imageUtils';
+import toast from 'react-hot-toast';
 
 const SubmitReport = ({ isEdit = false }) => {
     const navigate = useNavigate();
@@ -21,14 +24,20 @@ const SubmitReport = ({ isEdit = false }) => {
     const [formData, setFormData] = useState({
         garbageType: 'Household',
         location: '',
+        city: 'Pune',
+        area: '',
         landmark: '',
         zone: '',
+        contactNumber: '',
         description: '',
         urgency: 'Medium',
-        photo: null
+        photos: []
     });
-    
-    const [preview, setPreview] = useState(null);
+
+    const [isLocatingCoords, setIsLocatingCoords] = useState(false);
+    const [isDetectingAddress, setIsDetectingAddress] = useState(false);
+
+    const [previews, setPreviews] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
@@ -42,12 +51,23 @@ const SubmitReport = ({ isEdit = false }) => {
     const fetchReportData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:5000/api/reports/${id}`, {
+            const res = await axios.get(`/api/reports/${id}`, {
                 headers: { 'x-auth-token': token }
             });
-            const { garbageType, location, landmark, zone, description, photo, urgency } = res.data;
-            setFormData({ garbageType, location, landmark, zone, description, urgency, photo: null });
-            if (photo) setPreview(photo);
+            const { garbageType, location, city, area, landmark, zone, contactNumber, description, photos, urgency } = res.data;
+            setFormData({
+                garbageType,
+                location,
+                city: city || 'Pune',
+                area: area || '',
+                landmark: landmark || '',
+                zone: zone || '',
+                contactNumber: contactNumber || '',
+                description,
+                urgency,
+                photos: []
+            });
+            if (photos && photos.length > 0) setPreviews(photos);
         } catch (err) {
             setError('Failed to fetch report data.');
             console.error(err);
@@ -55,18 +75,174 @@ const SubmitReport = ({ isEdit = false }) => {
     };
 
     const onChange = (e) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        
+        if (name === 'contactNumber') {
+            // Only digits, strictly max 10
+            value = value.replace(/\D/g, '').slice(0, 10);
+        }
+        
         setFormData({ ...formData, [name]: value });
     };
 
     const onFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFormData({ ...formData, photo: file });
-            const reader = new FileReader();
-            reader.onloadend = () => setPreview(reader.result);
-            reader.readAsDataURL(file);
+        const files = Array.from(e.target.files);
+        if (files.length + previews.length > 3) {
+            setError('You can only upload up to 3 photos.');
+            return;
         }
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const compressed = await compressImage(reader.result);
+                setPreviews(prev => [...prev, compressed]);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const removePhoto = (index) => {
+        const newPreviews = previews.filter((_, i) => i !== index);
+        const newPhotos = formData.photos.filter((_, i) => i !== index);
+        setPreviews(newPreviews);
+        setFormData({ ...formData, photos: newPhotos });
+    };
+
+    const geolocate = (mode = 'coordinates') => {
+        if (!navigator.geolocation) {
+            setError('Geolocation is not supported by your browser');
+            return;
+        }
+
+        if (mode === 'coordinates') setIsLocatingCoords(true);
+        else setIsDetectingAddress(true);
+        setError('');
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+
+                if (mode === 'address') {
+                    try {
+                        const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+                        if (!GOOGLE_KEY) {
+                            const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+                            const addr = res.data.address;
+
+                            const cityVal = addr.county || addr.city_district || addr.state_district || 'Pune';
+                            const areaVal = addr.suburb || addr.neighbourhood || addr.quarter || addr.residential || addr.village || addr.town || addr.road || '';
+                            const landmarkVal = res.data.display_name || '';
+
+                            // Deep Zone Scan
+                            let zoneVal = '';
+                            const fullAddr = (landmarkVal || '').toLowerCase();
+                            if (fullAddr.match(/akurdi|pimpri/)) zoneVal = 'East';
+                            else if (fullAddr.match(/wakad|hinjewadi/)) zoneVal = 'West';
+                            else if (fullAddr.match(/nigdi|bhosari/)) zoneVal = 'North';
+                            else if (fullAddr.match(/hadapsar/)) zoneVal = 'South';
+
+                            setFormData(prev => ({
+                                ...prev,
+                                city: cityVal,
+                                area: areaVal || (landmarkVal.split(',')[0]),
+                                zone: zoneVal || prev.zone,
+                                landmark: landmarkVal
+                            }));
+                            return;
+                        }
+
+                        // Use Google Maps API
+                        const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_KEY}`);
+                        const data = response.data;
+
+                        if (data.status === 'OK' && data.results.length > 0) {
+                            const result = data.results[0];
+                            const components = result.address_components;
+
+                            let cityVal = 'Pune';
+                            let areaVal = '';
+
+                            const district = components.find(c => c.types.includes('administrative_area_level_2'));
+                            if (district) cityVal = district.long_name;
+
+                            const sublocality = components.find(c => c.types.includes('sublocality') || c.types.includes('sublocality_level_1'));
+                            const neighborhood = components.find(c => c.types.includes('neighborhood'));
+                            const locality = components.find(c => c.types.includes('locality'));
+
+                            if (sublocality) areaVal = sublocality.long_name;
+                            else if (neighborhood) areaVal = neighborhood.long_name;
+                            else if (locality) areaVal = locality.long_name;
+
+                            const landmarkVal = result.formatted_address;
+
+                            // Deep Zone Scan
+                            let zoneVal = '';
+                            const fullAddr = (landmarkVal || '').toLowerCase();
+                            if (fullAddr.match(/akurdi|pimpri/)) zoneVal = 'East';
+                            else if (fullAddr.match(/wakad|hinjewadi/)) zoneVal = 'West';
+                            else if (fullAddr.match(/nigdi|bhosari/)) zoneVal = 'North';
+                            else if (fullAddr.match(/hadapsar/)) zoneVal = 'South';
+
+                            setFormData(prev => ({
+                                ...prev,
+                                city: cityVal,
+                                area: areaVal || (landmarkVal.split(',')[0]),
+                                zone: zoneVal || prev.zone,
+                                landmark: landmarkVal
+                            }));
+                        } else {
+                            throw new Error(data.status);
+                        }
+                    } catch (err) {
+                        console.warn('Primary geocoding failed, falling back to basic detection.');
+                        const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+                        const addr = res.data.address;
+                        const fullAddr = res.data.display_name || '';
+                        const areaVal = addr.suburb || addr.neighbourhood || addr.village || addr.town || (fullAddr.split(',')[0]) || '';
+                        
+                        let zoneVal = '';
+                        if (fullAddr.match(/akurdi|pimpri/i)) zoneVal = 'East';
+                        else if (fullAddr.match(/wakad|hinjewadi/i)) zoneVal = 'West';
+                        else if (fullAddr.match(/nigdi|bhosari/i)) zoneVal = 'North';
+                        else if (fullAddr.match(/hadapsar/i)) zoneVal = 'South';
+
+                        setFormData(prev => ({
+                            ...prev,
+                            city: addr.county || addr.city_district || 'Pune',
+                            area: areaVal,
+                            zone: zoneVal || prev.zone,
+                            landmark: fullAddr
+                        }));
+                    } finally {
+                        setIsDetectingAddress(false);
+                    }
+                } else {
+                    setFormData(prev => ({ ...prev, location: `${latitude}, ${longitude}` }));
+                    setIsLocatingCoords(false);
+                }
+            },
+            (error) => {
+                setIsLocatingCoords(false);
+                setIsDetectingAddress(false);
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        setError('Location permission denied. Please enable it in your browser.');
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        setError('Location information is unavailable.');
+                        break;
+                    case error.TIMEOUT:
+                        setError('Location request timed out. Please try again.');
+                        break;
+                    default:
+                        setError('Unable to retrieve your location. Please enter it manually.');
+                        break;
+                }
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
     };
 
     const onSubmit = async (e) => {
@@ -74,8 +250,14 @@ const SubmitReport = ({ isEdit = false }) => {
         setError('');
         setIsSubmitting(true);
 
-        if (!formData.location || !formData.zone) {
-            setError('Please fill in required fields (Location and Zone)');
+        if (!formData.location || !formData.zone || !formData.area || !formData.description) {
+            setError('Please fill in required fields (Location, Zone, Area, and Description)');
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (previews.length === 0) {
+            setError('Please upload at least one photo');
             setIsSubmitting(false);
             return;
         }
@@ -84,21 +266,45 @@ const SubmitReport = ({ isEdit = false }) => {
             const token = localStorage.getItem('token');
             const dataToSend = {
                 ...formData,
-                photo: preview
+                photos: previews,
+                initialPhotoCount: previews.length
             };
 
+            let res;
             if (isEdit) {
-                await axios.put(`http://localhost:5000/api/reports/${id}`, dataToSend, {
+                res = await axios.put(`/api/reports/${id}`, dataToSend, {
                     headers: { 'x-auth-token': token }
                 });
             } else {
-                await axios.post('http://localhost:5000/api/reports', dataToSend, {
+                res = await axios.post('/api/reports', dataToSend, {
                     headers: { 'x-auth-token': token }
                 });
             }
 
-            setSuccess(true);
-            setTimeout(() => navigate('/citizen/my-reports'), 2000);
+            toast.success(res.data?.message || (isEdit ? 'Report updated successfully!' : 'Report submitted successfully!'));
+            
+            // ⚡ INSTANT UI SYNC: Update the local dashboard cache 
+            try {
+                // Use Auth Context for ID if available, otherwise fallback (match MyReports.jsx)
+                // Since this is SubmitReport, the user is definitely logged in.
+                const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+                const CACHE_KEY = `ecoPulse_citizen_reports_cache_${userObj._id || 'guest'}`;
+                
+                const cachedData = localStorage.getItem(CACHE_KEY);
+                let reports = cachedData ? JSON.parse(cachedData) : [];
+                const newReport = res.data.report || res.data.data || res.data;
+                
+                if (isEdit) {
+                    reports = reports.map(r => r._id === id ? newReport : r);
+                } else {
+                    reports = [newReport, ...reports];
+                }
+                localStorage.setItem(CACHE_KEY, JSON.stringify(reports));
+            } catch (cacheErr) {
+                console.error("Cache update failed:", cacheErr);
+            }
+
+            navigate('/citizen/my-reports');
         } catch (err) {
             console.error('Submission error:', err);
             const message = err.response?.data?.message || err.message || 'Failed to submit report. Please try again.';
@@ -117,7 +323,7 @@ const SubmitReport = ({ isEdit = false }) => {
                         <h2 className="text-[17px] font-black text-slate-800 dark:text-white tracking-tight">
                             {isEdit ? 'Edit Report' : 'Submit Report'}
                         </h2>
-                        <button 
+                        <button
                             onClick={() => navigate('/citizen/my-reports')}
                             className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-slate-800 dark:hover:text-white"
                         >
@@ -133,17 +339,17 @@ const SubmitReport = ({ isEdit = false }) => {
 
                         <form className="space-y-6">
                             {error && (
-                                <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl flex items-center space-x-3 text-rose-600 animate-shake mb-6">
-                                    <AlertCircle size={20} />
-                                    <p className="font-bold">{error}</p>
+                                <div className="flex items-center space-x-1.5 text-rose-600 animate-fade-in mb-2">
+                                    <AlertCircle size={14} strokeWidth={3} />
+                                    <p className="text-[11px] font-black tracking-tight">{error}</p>
                                 </div>
                             )}
 
                             {success && (
-                                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center space-x-3 text-emerald-600 mb-6">
-                                    <CheckCircle2 size={20} />
-                                    <p className="font-bold">
-                                        {isEdit ? 'Report updated successfully!' : 'Report submitted successfully!'}
+                                <div className="flex items-center space-x-1.5 text-emerald-600 animate-fade-in mb-2">
+                                    <CheckCircle2 size={14} strokeWidth={3} />
+                                    <p className="text-[11px] font-black tracking-tight">
+                                        {typeof success === 'string' ? success : (isEdit ? 'Report updated successfully!' : 'Report submitted successfully!')}
                                     </p>
                                 </div>
                             )}
@@ -153,10 +359,10 @@ const SubmitReport = ({ isEdit = false }) => {
                                 {/* Garbage Type */}
                                 <div className="flex flex-col gap-1.5 text-left">
                                     <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
-                                        Garbage type *
+                                        Garbage Type *
                                     </label>
                                     <div className="relative">
-                                        <select 
+                                        <select
                                             name="garbageType"
                                             value={formData.garbageType}
                                             onChange={onChange}
@@ -172,13 +378,91 @@ const SubmitReport = ({ isEdit = false }) => {
                                     </div>
                                 </div>
 
-                                {/* City Zone */}
+                                {/* Urgency Level */}
                                 <div className="flex flex-col gap-1.5 text-left">
                                     <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
-                                        City zone *
+                                        Urgency Level *
                                     </label>
                                     <div className="relative">
-                                        <select 
+                                        <select
+                                            name="urgency"
+                                            value={formData.urgency}
+                                            onChange={onChange}
+                                            className="w-full h-[2.5rem] px-3 bg-white dark:bg-slate-900 border border-[#b8b8b8] dark:border-slate-700 rounded-[0.4rem] text-slate-900 dark:text-white text-[0.875rem] focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-white transition-all appearance-none"
+                                        >
+                                            <option value="Low">Low</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="High">High</option>
+                                        </select>
+                                        <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
+                                    </div>
+                                </div>
+
+                                {/* Location Field with Top-Level Button */}
+                                <div className="flex flex-col gap-1.5 text-left md:col-span-2">
+                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+                                        <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
+                                            Location (Auto / Map / Link) *
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => geolocate('coordinates')}
+                                            disabled={isLocatingCoords}
+                                            className="ml-auto md:ml-0 text-[0.75rem] flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold hover:underline disabled:opacity-50"
+                                        >
+                                            <MapPin size={14} /> {isLocatingCoords ? 'Tracking...' : 'Use My Location'}
+                                        </button>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        name="location"
+                                        placeholder="Paste Google Maps link OR auto detect"
+                                        required
+                                        value={formData.location}
+                                        onChange={onChange}
+                                        className="w-full h-[2.5rem] px-3 bg-white dark:bg-slate-900 border border-[#b8b8b8] dark:border-slate-700 rounded-[0.4rem] text-slate-900 dark:text-white text-[0.875rem] focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-white transition-all"
+                                    />
+                                </div>
+
+                                {/* Section Action Button (Targets Geography Fields) */}
+                                <div className="flex flex-col text-right md:col-span-2 -mb-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => geolocate('address')}
+                                        disabled={isDetectingAddress}
+                                        className="ml-auto w-fit text-[0.8125rem] flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold hover:underline disabled:opacity-50"
+                                    >
+                                        {isDetectingAddress ? (
+                                            <>Detecting Details...</>
+                                        ) : (
+                                            <> Auto-Fill Details</>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* City (Fixed Pune) */}
+                                <div className="flex flex-col gap-1.5 text-left">
+                                    <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
+                                        City *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        required
+                                        value={formData.city}
+                                        onChange={onChange}
+                                        placeholder="e.g. Pune"
+                                        className="w-full h-[2.5rem] px-3 bg-white dark:bg-slate-900 border border-[#b8b8b8] dark:border-slate-700 rounded-[0.4rem] text-slate-900 dark:text-white text-[0.875rem] focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-white transition-all"
+                                    />
+                                </div>
+
+                                {/* Zone */}
+                                <div className="flex flex-col gap-1.5 text-left">
+                                    <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
+                                        Zone *
+                                    </label>
+                                    <div className="relative">
+                                        <select
                                             name="zone"
                                             required
                                             value={formData.zone}
@@ -196,28 +480,27 @@ const SubmitReport = ({ isEdit = false }) => {
                                     </div>
                                 </div>
 
-                                {/* Location */}
-                                <div className="flex flex-col gap-1.5 text-left md:col-span-2">
+                                {/* Area */}
+                                <div className="flex flex-col gap-1.5 text-left">
                                     <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
-                                        Area / Location *
+                                        Area *
                                     </label>
-                                    <input 
+                                    <input
                                         type="text"
-                                        name="location"
-                                        placeholder="e.g. MG Road, Near Market"
+                                        name="area"
+                                        placeholder="e.g. Akurdi, Pimpri"
                                         required
-                                        value={formData.location}
+                                        value={formData.area}
                                         onChange={onChange}
                                         className="w-full h-[2.5rem] px-3 bg-white dark:bg-slate-900 border border-[#b8b8b8] dark:border-slate-700 rounded-[0.4rem] text-slate-900 dark:text-white text-[0.875rem] focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-white transition-all"
                                     />
                                 </div>
 
-                                {/* Landmark */}
-                                <div className="flex flex-col gap-1.5 text-left md:col-span-2">
+                                <div className="flex flex-col gap-1.5 text-left">
                                     <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
                                         Landmark (Optional)
                                     </label>
-                                    <input 
+                                    <input
                                         type="text"
                                         name="landmark"
                                         placeholder="e.g. Near City Bank"
@@ -226,6 +509,26 @@ const SubmitReport = ({ isEdit = false }) => {
                                         className="w-full h-[2.5rem] px-3 bg-white dark:bg-slate-900 border border-[#b8b8b8] dark:border-slate-700 rounded-[0.4rem] text-slate-900 dark:text-white text-[0.875rem] focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-white transition-all"
                                     />
                                 </div>
+
+
+
+                                {/* Contact Number */}
+                                <div className="flex flex-col gap-1.5 text-left md:col-span-2">
+                                    <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
+                                        Contact Number (Optional)
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="tel"
+                                            name="contactNumber"
+                                            inputMode="numeric"
+                                            placeholder="e.g. 9876543210 (10-digit mobile number)"
+                                            value={formData.contactNumber}
+                                            onChange={onChange}
+                                            className="w-full h-[2.5rem] px-3 bg-white dark:bg-slate-900 border border-[#b8b8b8] dark:border-slate-700 rounded-[0.4rem] text-slate-900 dark:text-white text-[0.875rem] focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-white transition-all tracking-wider"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Section: Description */}
@@ -233,9 +536,9 @@ const SubmitReport = ({ isEdit = false }) => {
                                 <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
                                     Description *
                                 </label>
-                                <textarea 
+                                <textarea
                                     name="description"
-                                    rows="4"
+                                    rows="3"
                                     placeholder="Briefly describe the issue..."
                                     value={formData.description}
                                     onChange={onChange}
@@ -243,56 +546,70 @@ const SubmitReport = ({ isEdit = false }) => {
                                 />
                             </div>
 
-                            {/* Section: Extra Info */}
-                            <div className="mt-8">
-                                <h3 className="text-[1.125rem] font-medium text-slate-900 dark:text-white mb-4">Additional Info</h3>
-                                
-                                <div className="space-y-6">
-                                    <div className="flex flex-col gap-1.5 text-left">
-                                        <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
-                                            Urgency level *
-                                        </label>
-                                        <div className="flex gap-4">
-                                            {['Low', 'Medium', 'High'].map((level) => (
-                                                <button
-                                                    key={level}
-                                                    type="button"
-                                                    onClick={() => setFormData({...formData, urgency: level})}
-                                                    className={`px-4 h-[1.75rem] rounded-full text-[0.75rem] font-bold transition-all ${
-                                                        formData.urgency === level 
-                                                            ? 'bg-emerald-600 text-white shadow-md'
-                                                            : 'bg-white text-slate-600 border border-slate-300 hover:border-slate-400'
-                                                    }`}
-                                                >
-                                                    {level}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
 
-                                    <div className="flex flex-col gap-1.5 text-left pt-2">
-                                        <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
-                                            Photo evidence
-                                        </label>
-                                        <div className="flex items-start gap-4">
-                                            <label className="w-20 h-20 flex flex-col items-center justify-center border border-[#b8b8b8] border-dashed rounded-[0.4rem] cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-all group overflow-hidden shrink-0">
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*" 
+                            {/* Section: Photos */}
+                            <div className="mt-8 border-t border-slate-100 dark:border-white/5 pt-8">
+                                <div className="flex flex-col gap-1.5 text-left">
+                                    <label className="text-[0.875rem] text-[#666666] dark:text-slate-400 font-medium ml-0.5">
+                                        Upload Photos (1–3) *
+                                    </label>
+                                    
+                                    <div className="flex flex-col gap-4 mt-2">
+                                        {previews.length === 0 ? (
+                                            <label className="relative border-2 border-dashed rounded-[1rem] p-6 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-[#eafef3] hover:border-emerald-500 bg-white border-slate-200">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    multiple
                                                     onChange={onFileChange}
-                                                    className="hidden" 
+                                                    className="hidden"
                                                 />
-                                                {preview ? (
-                                                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <Camera className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                                                )}
+                                                {/* Green Cloud Upload Icon */}
+                                                <div className="w-[56px] h-[56px] bg-[#e3fdf0] rounded-full flex items-center justify-center mb-3 transition-transform hover:scale-105">
+                                                    <CloudUpload className="text-[#0eac6b] w-6 h-6" strokeWidth={2.5} />
+                                                </div>
+                                                <span className="text-[13px] font-black text-slate-800">Tap or click to drop photos</span>
+                                                <span className="text-[11px] font-bold text-slate-400 mt-0.5">PNG, JPG up to 10MB</span>
                                             </label>
-                                            <div className="text-[0.75rem] text-[#666666] dark:text-slate-500 leading-normal bg-slate-50 dark:bg-slate-900/50 p-3 rounded-[0.8rem] border border-slate-100 dark:border-white/5">
-                                                <span className="font-bold flex items-center gap-1 mb-1 text-slate-700 dark:text-slate-300">
-                                                    <Info size={12} /> Note:
-                                                </span>
-                                                Photo helps waste collectors identify the issue quickly.
+                                        ) : (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1 w-full">
+                                                {previews.map((prev, idx) => (
+                                                    <div key={idx} className="relative group aspect-square w-full rounded-xl overflow-hidden border-2 border-emerald-500/20 shadow-md">
+                                                        <img src={prev} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removePhoto(idx)}
+                                                            className="absolute top-1.5 right-1.5 bg-rose-500 text-white p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                        >
+                                                            <X size={14} strokeWidth={3} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {previews.length < 3 && (
+                                                    <label className="aspect-square w-full rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/5 transition-all flex flex-col items-center justify-center gap-1 group cursor-pointer">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            multiple
+                                                            onChange={onFileChange}
+                                                            className="hidden"
+                                                        />
+                                                        <div className="p-2 bg-slate-50 dark:bg-white/5 rounded-full text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                                            <Camera size={20} />
+                                                        </div>
+                                                        <span className="text-[10px] font-black uppercase text-slate-400 group-hover:text-emerald-600">Add Another</span>
+                                                    </label>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="flex p-4 mt-2 bg-[#f0fdf4] border border-[#d1fae5] rounded-[0.8rem] items-start gap-3 w-full">
+                                            <Info size={20} className="text-[#10b981] shrink-0 mt-0.5" strokeWidth={2.5} />
+                                            <div className="text-left w-full">
+                                                <h4 className="text-[12.5px] font-black text-[#065f46] mb-1 tracking-tight">Note:</h4>
+                                                <p className="text-[11.5px] font-bold text-[#064e3b] leading-snug">
+                                                    Upload 1 to 3 photos of the waste. High quality photos help us resolve issues faster.
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

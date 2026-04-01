@@ -11,13 +11,12 @@ const Navbar = () => {
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const activeTab = location.pathname === '/about' ? 'about' : 'home';
-
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
     const navLinks = [
-        { name: 'Home', path: '/home', active: activeTab === 'home' || location.pathname === '/' },
-        { name: 'About', path: '/about', active: activeTab === 'about' }
+        { name: 'Home', path: '/home', active: location.pathname === '/home' || location.pathname === '/' },
+        { name: 'Leaderboard', path: '/leaderboard', active: location.pathname === '/leaderboard' },
+        { name: 'About', path: '/about', active: location.pathname === '/about' }
     ];
 
     return (
@@ -33,43 +32,34 @@ const Navbar = () => {
 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center space-x-8">
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.name}
+                            to={link.path}
+                            className={`relative font-bold transition-all text-base ${link.active ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-500'}`}
+                        >
+                            {link.name}
+                            {link.active && (
+                                <span className="absolute -bottom-1.5 left-0 w-full h-[2px] bg-emerald-500 rounded-full"></span>
+                            )}
+                        </Link>
+                    ))}
+
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                    >
+                        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                    </button>
+
                     {!user ? (
-                        <>
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.name}
-                                    to={link.path}
-                                    className={`relative font-bold transition-all text-base ${link.active ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-500'}`}
-                                >
-                                    {link.name}
-                                    {link.active && (
-                                        <span className="absolute -bottom-1.5 left-0 w-full h-[2px] bg-emerald-500 rounded-full"></span>
-                                    )}
-                                </Link>
-                            ))}
-
-                            <button
-                                onClick={toggleTheme}
-                                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
-                            >
-                                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                            </button>
-
-                            <Link to="/login" className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95 group">
-                                <UserIcon size={18} className="group-hover:scale-110 transition-transform" />
-                                <span>Login</span>
-                            </Link>
-                        </>
+                        <Link to="/login" className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95 group">
+                            <UserIcon size={18} className="group-hover:scale-110 transition-transform" />
+                            <span>Login</span>
+                        </Link>
                     ) : (
                         <div className="flex items-center space-x-6">
-                            <button
-                                onClick={toggleTheme}
-                                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
-                            >
-                                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                            </button>
-
-                            <Link to={`/${user.role}/dashboard`} className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 hover:text-emerald-600 font-bold transition-colors">
+                            <Link to={`/${user.role === 'Swachhta Mitra' ? 'swachhta-mitra' : user.role}/dashboard`} className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 hover:text-emerald-600 font-bold transition-colors">
                                 <UserIcon size={18} />
                                 <span>Dashboard</span>
                             </Link>
@@ -120,26 +110,24 @@ const Navbar = () => {
                         className="absolute top-full left-0 right-0 bg-white/95 dark:bg-[#0B1121]/95 backdrop-blur-xl z-[90] md:hidden py-3 px-6 border-b border-slate-200/50 dark:border-white/5 shadow-2xl flex flex-col items-center"
                     >
                         <div className="flex flex-col items-center space-y-1 w-full">
-                            {!user ? (
-                                <>
-                                    {navLinks.map((link) => (
-                                        <Link
-                                            key={link.name}
-                                            to={link.path}
-                                            onClick={() => setIsMenuOpen(false)}
-                                            className={`relative w-full max-w-[280px] text-center p-2 font-bold text-sm transition-all flex flex-col items-center group ${link.active ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-500'}`}
-                                        >
-                                            <span>{link.name}</span>
-                                            {link.active && (
-                                                <span className="mt-1 w-8 h-[2px] bg-emerald-500 rounded-full"></span>
-                                            )}
-                                        </Link>
-                                    ))}
-                                </>
-                            ) : (
+                            {navLinks.map((link) => (
+                                <Link
+                                    key={link.name}
+                                    to={link.path}
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className={`relative w-full max-w-[280px] text-center p-2 font-bold text-sm transition-all flex flex-col items-center group ${link.active ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-500'}`}
+                                >
+                                    <span>{link.name}</span>
+                                    {link.active && (
+                                        <span className="mt-1 w-8 h-[2px] bg-emerald-500 rounded-full"></span>
+                                    )}
+                                </Link>
+                            ))}
+                            
+                            {user && (
                                 <>
                                     <Link
-                                        to={`/${user.role}/dashboard`}
+                                        to={`/${user.role === 'Swachhta Mitra' ? 'swachhta-mitra' : user.role}/dashboard`}
                                         onClick={() => setIsMenuOpen(false)}
                                         className="w-full max-w-[280px] text-center p-2 font-bold text-sm text-slate-600 dark:text-slate-200 hover:text-emerald-600"
                                     >

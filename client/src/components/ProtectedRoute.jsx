@@ -11,7 +11,9 @@ const ProtectedRoute = ({ children, role }) => {
     }
 
     if (role && user.role !== role) {
-        return <Navigate to={`/${user.role}/dashboard`} />;
+        // Handle role specific redirection with path formatting
+        const rolePath = user.role === 'Swachhta Mitra' ? 'swachhta-mitra' : user.role;
+        return <Navigate to={`/${rolePath}/dashboard`} />;
     }
 
     return children;

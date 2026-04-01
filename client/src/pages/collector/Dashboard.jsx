@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
+import {
     Clock, LayoutGrid, Zap, Award, CheckCircle2, RefreshCcw, TrendingUp, Loader2,
     Megaphone, Activity, Trophy, PlusCircle, ChevronRight, Wallet, FileText, Navigation
 } from 'lucide-react';
@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 
 /* ─────────────────────────────────────────────────────────────────
    HoverCard & StatCard Components (Matching Citizen EXACTLY)
-───────────────────────────────────────────────────────────────── */
+ ───────────────────────────────────────────────────────────────── */
 const cardBaseStyle = {
     transition: 'transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease, border-color 0.28s ease',
 };
@@ -112,8 +112,12 @@ const EmptyChartState = ({ icon: Icon, title, message }) => (
 const CollectorDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState(() => {
+        const cached = localStorage.getItem('collector_dashboard_data');
+        return cached ? JSON.parse(cached) : null;
+    });
+    const [loading, setLoading] = useState(!data);
+    const [refreshing, setRefreshing] = useState(false);
     const [timeframe, setTimeframe] = useState('7D');
 
     const quotes = [
@@ -124,37 +128,68 @@ const CollectorDashboard = () => {
     ];
     const todayQuote = useMemo(() => quotes[Math.floor(Math.random() * quotes.length)], []);
 
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = async (isRefresh = false) => {
+        if (isRefresh) setRefreshing(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/dashboard/collector', {
-                headers: { 'x-auth-token': token }
+            const res = await axios.get(`/api/dashboard/collector?t=${Date.now()}`, {
+                headers: {
+                    'x-auth-token': token,
+                    'Cache-Control': 'no-cache'
+                }
             });
             setData(res.data);
+            // 🔥 Persist to cache (Fast-Load Sync)
+            localStorage.setItem('collector_dashboard_data', JSON.stringify(res.data));
         } catch (err) {
             console.error('Failed to fetch dashboard data:', err);
-            toast.error('Failed to update dashboard');
+            // Only toast if it's a critical initial failure or manual refresh
+            if (!data || isRefresh) {
+                const errMsg = err.response?.data?.message || (typeof err.response?.data === 'string' ? err.response.data : 'EcoPulse Sync: Database connection pending...');
+                toast.error(errMsg.substring(0, 100));
+            }
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
     useEffect(() => {
         fetchDashboardData();
+
+        // 🔥 Smart Background Sync
+        const interval = setInterval(() => fetchDashboardData(true), 15000);
+
+        // 🔥 Instant Sync on Tab Focus
+        const handleFocus = () => fetchDashboardData(true);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
     }, []);
 
-    const stats = data?.stats || { assigned: 0, completed: 0, pending: 0 };
-    
-    // Derived Collector Metrics (Merit-Based)
-    const totalBadges = Math.floor(stats.completed / 2);
-    const totalImpactScore = (stats.completed * 50) + (totalBadges * 100);
-    const dailyImpactScore = stats.completed * 50; 
-    const totalReports = stats.assigned + stats.completed;
-    const inProgress = stats.assigned - stats.pending;
-    const completionRate = totalReports > 0 ? Math.round((stats.completed / totalReports) * 100) : 0;
+    const stats = {
+        assigned: data?.stats?.assigned || 0,
+        completed: data?.stats?.completed || 0,
+        pending: data?.stats?.pending || 0,
+        inProgress: data?.stats?.inProgress || 0,
+        totalScore: data?.stats?.totalScore || 0,
+        dailyScore: data?.stats?.dailyScore || 0,
+        totalBadges: data?.stats?.totalBadges || 0,
+        totalReports: data?.stats?.totalReports || 0,
+        completionRate: data?.stats?.completionRate || 0
+    };
 
-    // The badge they are currently working on
-    const nextBadgeIndex = totalBadges; 
+    const totalBadges = stats.totalBadges;
+    const totalImpactScore = stats.totalScore;
+    const dailyImpactScore = stats.dailyScore;
+    const totalReports = stats.totalReports;
+    const inProgress = stats.inProgress;
+    const completionRate = stats.completionRate;
+
+    const nextBadgeIndex = totalBadges;
     const badgeNames = [
         "First Pickup", "Route Rookie", "Street Saver", "Bin Buster", "Swift Sweeper",
         "Clean Captain", "Waste Wizard", "Truck Titan", "Haul Hero", "Eco Picker",
@@ -189,14 +224,14 @@ const CollectorDashboard = () => {
                 d.setDate(today.getDate() - (6 - i));
                 const key = d.toISOString().split('T')[0];
                 const found = raw.find(r => r.name === key);
-                return { 
-                    name: dayNames[d.getDay()], 
+                return {
+                    name: dayNames[d.getDay()],
                     score: found ? Math.round(found.score) : 0,
                     total: found ? found.total : 0,
-                    badges: found ? found.badges : 0,
                     resolved: found ? found.resolved : 0,
                     inProgress: found ? found.inProgress : 0,
-                    pending: found ? found.pending : 0
+                    pending: found ? found.pending : 0,
+                    badges: found ? found.badges : 0
                 };
             });
         }
@@ -207,14 +242,14 @@ const CollectorDashboard = () => {
             return monthNames.map((name, m) => {
                 const monthKey = `${year}-${String(m + 1).padStart(2, '0')}`;
                 const found = raw.find(r => r.name === monthKey);
-                return { 
-                    name, 
+                return {
+                    name,
                     score: found ? Math.round(found.score) : 0,
                     total: found ? found.total : 0,
-                    badges: found ? found.badges : 0,
                     resolved: found ? found.resolved : 0,
                     inProgress: found ? found.inProgress : 0,
-                    pending: found ? found.pending : 0
+                    pending: found ? found.pending : 0,
+                    badges: found ? found.badges : 0
                 };
             });
         }
@@ -224,14 +259,14 @@ const CollectorDashboard = () => {
             const currentYear = today.getFullYear();
             return [currentYear - 2, currentYear - 1, currentYear].map(yr => {
                 const found = raw.find(r => r.name === String(yr));
-                return { 
-                    name: String(yr), 
+                return {
+                    name: String(yr),
                     score: found ? Math.round(found.score) : 0,
                     total: found ? found.total : 0,
-                    badges: found ? found.badges : 0,
                     resolved: found ? found.resolved : 0,
                     inProgress: found ? found.inProgress : 0,
-                    pending: found ? found.pending : 0
+                    pending: found ? found.pending : 0,
+                    badges: found ? found.badges : 0
                 };
             });
         }
@@ -241,28 +276,28 @@ const CollectorDashboard = () => {
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto animate-fade-in text-[var(--text-main)]">
-            <PageHeader 
-                title={`Hello, ${user?.name?.split(' ')[0] || 'Collector'}!`}
+            <PageHeader
+                title={`Hello, ${user?.name || 'Swachhta Mitra'}!`}
                 subtitle={`"${todayQuote}"`}
                 icon={LayoutGrid}
             />
 
             {/* ── Stats Grid: 8 Boxes ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-                <StatCard 
-                    label={<><span className="hidden sm:inline">Total Operation Score</span><span className="sm:hidden">Total Score</span></>} 
-                    value={totalImpactScore} 
-                    icon={Wallet} 
-                    colorClass="text-emerald-500" 
-                    rKey="impact-score" 
+                <StatCard
+                    label={<><span className="hidden sm:inline">Total Operation Score</span><span className="sm:hidden">Total Score</span></>}
+                    value={totalImpactScore}
+                    icon={Wallet}
+                    colorClass="text-emerald-500"
+                    rKey="impact-score"
                 />
-                <StatCard 
-                    label={<><span className="hidden sm:inline">Daily Performance Score</span><span className="sm:hidden">Daily Score</span></>} 
-                    value={dailyImpactScore} 
-                    icon={Zap} 
-                    colorClass="text-amber-500" 
-                    delay={0.05} 
-                    rKey="daily-impact" 
+                <StatCard
+                    label={<><span className="hidden sm:inline">Daily Performance Score</span><span className="sm:hidden">Daily Score</span></>}
+                    value={dailyImpactScore}
+                    icon={Zap}
+                    colorClass="text-amber-500"
+                    delay={0.05}
+                    rKey="daily-impact"
                 />
                 <StatCard label="Total Reports" value={totalReports} icon={FileText} colorClass="text-slate-600" delay={0.1} rKey="total-reports" />
                 <StatCard label="Total Badges" value={totalBadges} icon={Trophy} colorClass="text-amber-500" delay={0.15} rKey="total-badges" />
@@ -305,7 +340,7 @@ const CollectorDashboard = () => {
                                         {[
                                             { step: '1', title: 'View Task', desc: 'Navigate to your active pickup queue.' },
                                             { step: '2', title: 'Verify Spot', desc: 'Confirm the waste location on site.' },
-                                            { step: '3', title: 'Update Proof', desc: 'Upload cleanup photos to earn +50 points.' }
+                                            { step: '3', title: 'Update Evidence', desc: 'Upload cleanup photos to earn +50 points.' }
                                         ].map(s => (
                                             <div key={s.step} className="flex gap-3">
                                                 <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-[11px] font-black text-emerald-600 shrink-0">{s.step}</span>
@@ -318,7 +353,7 @@ const CollectorDashboard = () => {
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => navigate('/collector/pickups')} className="w-full mt-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[13px] rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                            <button onClick={() => navigate('/swachhta-mitra/pickups')} className="w-full mt-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[13px] rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                                 <Navigation size={15} /> View all Pickups
                             </button>
                         </HoverCard>
@@ -388,7 +423,7 @@ const CollectorDashboard = () => {
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => navigate('/collector/badges')} className="w-full mt-6 py-2.5 border-2 border-slate-100 dark:border-white/5 rounded-xl text-[12px] font-black text-gray-500 hover:text-emerald-500 transition-all tracking-widest">View all Badges</button>
+                        <button onClick={() => navigate('/swachhta-mitra/badges')} className="w-full mt-6 py-2.5 border-2 border-slate-100 dark:border-white/5 rounded-xl text-[12px] font-black text-gray-500 hover:text-emerald-500 transition-all tracking-widest">View all Badges</button>
                     </HoverCard>
                 </div>
             </div>

@@ -18,8 +18,11 @@ import CollectorBadges from './pages/collector/Badges';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminReports from './pages/admin/Reports';
 import AdminUsers from './pages/admin/Users';
+import CitizenNotifications from './pages/citizen/Notifications';
+import CollectorNotifications from './pages/collector/Notifications';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useLocation } from 'react-router-dom';
+import Leaderboard from './pages/Leaderboard';
 
 import ModuleLayout from './components/layout/ModuleLayout';
 import { Toaster } from 'react-hot-toast';
@@ -33,7 +36,7 @@ const AppContent = () => {
     location.pathname.startsWith('/reset-password') || 
     location.pathname.startsWith('/citizen/') ||
     location.pathname.startsWith('/admin/') ||
-    location.pathname.startsWith('/collector/');
+    location.pathname.startsWith('/swachhta-mitra/');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -42,6 +45,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/about" element={<Home />} />
           <Route path="/signup" element={<Auth />} />
           <Route path="/login" element={<Auth />} />
@@ -49,32 +53,62 @@ const AppContent = () => {
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           
           {/* Unified Routes with ModuleLayout */}
-          <Route 
-            element={
-              <ProtectedRoute>
-                <ModuleLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* Citizen */}
-            <Route path="/citizen/dashboard" element={<CitizenDashboard />} />
-            <Route path="/citizen/report" element={<SubmitReport />} />
-            <Route path="/citizen/my-reports" element={<MyReports />} />
-            <Route path="/citizen/profile" element={<CitizenProfile />} />
-            <Route path="/citizen/badges" element={<Badges />} />
-            <Route path="/citizen/notification" element={<CitizenDashboard />} />
-            <Route path="/citizen/edit-report/:id" element={<SubmitReport isEdit={true} />} />
+            {/* Citizen Protected Routes */}
+            <Route 
+              element={
+                <ProtectedRoute role="citizen">
+                  <ModuleLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/citizen/dashboard" element={<CitizenDashboard />} />
+              <Route path="/citizen/report" element={<SubmitReport />} />
+              <Route path="/citizen/my-reports" element={<MyReports />} />
+              <Route path="/citizen/badges" element={<Badges />} />
+              <Route path="/citizen/notification" element={<CitizenNotifications />} />
+              <Route path="/citizen/profile" element={<CitizenProfile />} />
+              <Route path="/citizen/edit-report/:id" element={<SubmitReport isEdit={true} />} />
+            </Route>
             
-            {/* Collector */}
-            <Route path="/collector/dashboard" element={<CollectorDashboard />} />
-            <Route path="/collector/pickups" element={<CollectorPickups />} />
-            <Route path="/collector/badges" element={<CollectorBadges />} />
-            
-            {/* Admin */}
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-          </Route>
+            {/* Swachhta Mitra Protected Routes */}
+            <Route 
+              element={
+                <ProtectedRoute role="Swachhta Mitra">
+                  <ModuleLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/swachhta-mitra/dashboard" element={<CollectorDashboard />} />
+              <Route path="/swachhta-mitra/pickups" element={<CollectorPickups />} />
+              <Route path="/swachhta-mitra/badges" element={<CollectorBadges />} />
+              <Route path="/swachhta-mitra/notification" element={<CollectorNotifications />} />
+              <Route path="/swachhta-mitra/profile" element={<CitizenProfile />} />
+            </Route>
+
+            {/* Admin Protected Routes */}
+            <Route 
+              element={
+                <ProtectedRoute role="admin">
+                  <ModuleLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/reports" element={<AdminReports />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/profile" element={<CitizenProfile />} />
+            </Route>
+
+            {/* Shared Profile Alias */}
+            <Route 
+              element={
+                <ProtectedRoute>
+                  <ModuleLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/profile" element={<CitizenProfile />} />
+            </Route>
 
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

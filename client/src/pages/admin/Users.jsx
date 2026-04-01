@@ -36,7 +36,7 @@ const AdminUsers = () => {
     const fetchUsers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:5000/api/admin/users`, {
+            const res = await axios.get(`/api/admin/users`, {
                 headers: { 'x-auth-token': token },
                 params: {
                     role: roleFilter,
@@ -54,7 +54,7 @@ const AdminUsers = () => {
         try {
             setStatusUpdating(userId);
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/users/${userId}/status`, { isActive: !currentStatus }, {
+            await axios.put(`/api/admin/users/${userId}/status`, { isActive: !currentStatus }, {
                 headers: { 'x-auth-token': token }
             });
             fetchUsers();
@@ -114,7 +114,7 @@ const AdminUsers = () => {
                                 : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'
                             }`}
                         >
-                            {r}s
+                            {r === 'Collector' ? 'Swachhta Mitra' : r}s
                         </button>
                     ))}
                 </div>
@@ -126,14 +126,14 @@ const AdminUsers = () => {
                             
                             {/* Role Badge */}
                             <div className={`absolute top-0 right-0 px-6 py-2 rounded-bl-3xl text-[10px] font-black uppercase tracking-[0.2em] text-white ${
-                                u.role === 'admin' ? 'bg-indigo-600' : u.role === 'collector' ? 'bg-amber-500' : 'bg-emerald-500'
+                                u.role === 'admin' ? 'bg-indigo-600' : u.role === 'Swachhta Mitra' ? 'bg-amber-500' : 'bg-emerald-500'
                             }`}>
                                 {u.role}
                             </div>
 
                             <div className="flex items-center gap-4 mb-8">
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${
-                                    u.role === 'collector' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                                    u.role === 'Swachhta Mitra' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
                                 }`}>
                                     <UserCircle size={32} />
                                 </div>
@@ -166,13 +166,13 @@ const AdminUsers = () => {
                                     <MapPin size={14} className="text-slate-400" />
                                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Assigned Zone</span>
                                 </div>
-                                {u.role === 'collector' ? (
+                                {u.role === 'Swachhta Mitra' ? (
                                     <select 
                                         value={u.zone}
                                         onChange={(e) => {
                                             const newZone = e.target.value;
                                             const token = localStorage.getItem('token');
-                                            axios.put(`http://localhost:5000/api/admin/users/${u._id}/zone`, { zone: newZone }, {
+                                            axios.put(`/api/admin/users/${u._id}/zone`, { zone: newZone }, {
                                                 headers: { 'x-auth-token': token }
                                             }).then(() => fetchUsers()).catch(() => alert('Failed to update zone'));
                                         }}

@@ -118,8 +118,11 @@ const EmptyChartState = ({ icon: Icon, title, message }) => (
 const CitizenDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState(() => {
+        const cached = localStorage.getItem('citizen_dashboard_data');
+        return cached ? JSON.parse(cached) : null;
+    });
+    const [loading, setLoading] = useState(!data);
     const [refreshing, setRefreshing] = useState(false);
 
     const quotes = [
@@ -132,16 +135,20 @@ const CitizenDashboard = () => {
     const todayQuote = useMemo(() => quotes[Math.floor(Math.random() * quotes.length)], []);
 
     const fetchDashboardData = async (isRefresh = false) => {
+        // Only show refreshing indicator (if any) if it's a manual/auto background sync
         if (isRefresh) setRefreshing(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/dashboard/citizen', {
+            const res = await axios.get('/api/dashboard/citizen', {
                 headers: { 'x-auth-token': token }
             });
             setData(res.data);
+            // 🔥 Persist to cache for instant sub-zero loading next time
+            localStorage.setItem('citizen_dashboard_data', JSON.stringify(res.data));
         } catch (err) {
             console.error('Failed to fetch dashboard data:', err);
-            toast.error('Failed to update dashboard');
+            // Only show toast on manual refresh failure to avoid annoying users during background sync
+            if (isRefresh) toast.error('Check your connection');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -161,14 +168,10 @@ const CitizenDashboard = () => {
     const stats = data?.stats || { total: 0, resolved: 0, pending: 0, inProgress: 0 };
     const recentReports = data?.recentReports || [];
 
-    // ── Impact Scoring Logic (Dynamic) ──
-    // 10 pts per report | 50 pts per resolve | 100 pts per badge
-    const totalBadges = data?.stats?.badges ?? (stats.resolved > 0 ? Math.floor(stats.resolved / 2) : 0);
-    const totalCredits = (stats.total * 10) + (stats.resolved * 50) + (totalBadges * 100);
-
-    // Daily impact score
-    const dailyImpact = stats.resolved > 0 ? Math.min(stats.resolved * 20, 200) : 0;
-    // Resolution rate
+    // ── Impact Scoring Logic (Synced with Backend) ──
+    const totalBadges = stats.totalBadges || 0;
+    const totalCredits = stats.totalScore || 0;
+    const dailyImpact = stats.dailyScore || 0;
     const completionRate = stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0;
 
     const growthChartData = useMemo(() => {
@@ -244,7 +247,7 @@ const CitizenDashboard = () => {
     return (
         <div className="space-y-6 max-w-7xl mx-auto animate-fade-in">
             <PageHeader
-                title={`Hello, ${user?.name?.split(' ')[0] || 'Citizen'}!`}
+                title={`Hello, ${user?.name || 'Citizen'}!`}
                 subtitle={`"${todayQuote}"`}
                 icon={LayoutGrid}
             />
@@ -347,7 +350,7 @@ const CitizenDashboard = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     <p className="text-[12.5px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed italic border-l-2 border-emerald-500 pl-3">
-                                        Contribute to a cleaner city by reporting waste in 3 simple steps. Your reports are linked directly to local collectors for immediate response.
+                                        Contribute to a cleaner city by reporting waste in 3 simple steps. Your reports are linked directly to local Swachhta Mitras for immediate response.
                                     </p>
                                     <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
                                         Properly documenting waste helps our team build a cleaner ecosystem. By providing clear photos and locations, you give us actionable data that ensures your neighborhood stays healthy and sustainable for all citizens.
@@ -355,7 +358,7 @@ const CitizenDashboard = () => {
                                     <div className="space-y-3">
                                         {[
                                             { step: '1', title: 'Start Record', desc: 'Click button and enter location details.' },
-                                            { step: '2', title: 'Add Proof', desc: 'Upload clear photos of the waste spot.' },
+                                            { step: '2', title: 'Add Evidence', desc: 'Upload clear photos of the waste spot.' },
                                             { step: '3', title: 'Submit', desc: 'Confirm your report to earn +10 points.' }
                                         ].map(s => (
                                             <div key={s.step} className="flex gap-3">
@@ -388,7 +391,7 @@ const CitizenDashboard = () => {
                                     Community impact
                                 </h3>
                                 <p className="text-[12.5px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
-                                    Your effort is recorded and verified by our collectors. As you help, you earn points that boost your city-wide reputation rank and community status.
+                                    Your effort is recorded and verified by our Swachhta Mitras. As you help, you earn points that boost your city-wide reputation rank and community status.
                                 </p>
                                 <p className="text-[11px] font-bold text-slate-400 leading-relaxed mb-6">
                                     Your scores are used to help prioritize zones for faster cleanup. High rankers qualify for exclusive community rewards and environmental awards.

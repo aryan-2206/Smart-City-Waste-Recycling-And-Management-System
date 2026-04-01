@@ -12,6 +12,7 @@ const Signup = () => {
         zone: '',
         role: 'citizen'
     });
+    const [openSelect, setOpenSelect] = useState(null); // 'zone' or 'role'
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { signup } = useAuth();
@@ -20,7 +21,7 @@ const Signup = () => {
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const onSubmit = async e => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setError('');
         setIsLoading(true);
         try {
@@ -31,6 +32,60 @@ const Signup = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const CustomSelect = ({ name, value, options, label, icon: Icon, placeholder }) => {
+        const isOpen = openSelect === name;
+        const selectedOption = options.find(opt => opt.value === value);
+        const displayValue = selectedOption ? selectedOption.label : placeholder;
+
+        return (
+            <div className="space-y-2 group relative">
+                <label className="text-sm font-semibold text-slate-700 block text-center w-full">{label}</label>
+                <div className="relative">
+                    <div 
+                        onClick={() => setOpenSelect(isOpen ? null : name)}
+                        className={`w-full min-h-[52px] bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-2 rounded-2xl flex items-center justify-center transition-all cursor-pointer relative overflow-hidden ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-slate-100 dark:border-white/5 hover:border-emerald-300'}`}
+                    >
+                        {Icon && (
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                <Icon size={20} />
+                            </div>
+                        )}
+                        
+                        <span className={`text-[15px] font-bold text-center w-full block px-12 ${selectedOption ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                            {displayValue}
+                        </span>
+
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <ArrowRight size={18} className={`transition-transform duration-500 ${isOpen ? '-rotate-90 text-emerald-500' : 'rotate-90'}`} />
+                        </div>
+                    </div>
+
+                    {isOpen && (
+                        <>
+                            <div className="fixed inset-0 z-30" onClick={() => setOpenSelect(null)} />
+                            <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/10 rounded-2xl shadow-2xl z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="p-2 space-y-1">
+                                    {options.map((opt) => (
+                                        <div
+                                            key={opt.value}
+                                            onClick={() => {
+                                                onChange({ target: { name, value: opt.value } });
+                                                setOpenSelect(null);
+                                            }}
+                                            className={`px-4 py-3 text-[15px] font-bold text-center rounded-xl cursor-pointer transition-all ${value === opt.value ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600'}`}
+                                        >
+                                            {opt.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -44,7 +99,7 @@ const Signup = () => {
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 to-teal-500" />
 
                     <div className="flex flex-col md:flex-row items-center justify-between mb-10 pb-8 border-b border-slate-100">
-                        <div className="text-center md:text-left mb-6 md:mb-0">
+                        <div className="text-center w-full mb-6 md:mb-0">
                             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create Account</h2>
                             <p className="mt-2 text-slate-500 font-medium italic">"Every report counts towards a greener city"</p>
                         </div>
@@ -62,14 +117,14 @@ const Signup = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2 group">
-                                <label className="text-sm font-semibold text-slate-700 ml-1">Full Name</label>
+                                <label className="text-sm font-semibold text-slate-700 ml-1 block text-center w-full">Full Name</label>
                                 <div className="relative">
                                     <User className="absolute top-3.5 left-4 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                                     <input
                                         name="name"
                                         type="text"
                                         required
-                                        className="input-field pl-12"
+                                        className="input-field px-12"
                                         placeholder="Rahul Sharma"
                                         value={formData.name}
                                         onChange={onChange}
@@ -78,14 +133,14 @@ const Signup = () => {
                             </div>
 
                             <div className="space-y-2 group">
-                                <label className="text-sm font-semibold text-slate-700 ml-1">Email Address</label>
+                                <label className="text-sm font-semibold text-slate-700 ml-1 block text-center w-full">Email Address</label>
                                 <div className="relative">
                                     <Mail className="absolute top-3.5 left-4 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                                     <input
                                         name="email"
                                         type="email"
                                         required
-                                        className="input-field pl-12"
+                                        className="input-field px-12"
                                         placeholder="rahul@example.com"
                                         value={formData.email}
                                         onChange={onChange}
@@ -94,7 +149,7 @@ const Signup = () => {
                             </div>
 
                             <div className="space-y-2 group">
-                                <label className="text-sm font-semibold text-slate-700 ml-1">Password</label>
+                                <label className="text-sm font-semibold text-slate-700 ml-1 block text-center w-full">Password</label>
                                 <div className="relative">
                                     <Lock className="absolute top-3.5 left-4 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                                     <input
@@ -102,7 +157,7 @@ const Signup = () => {
                                         type="password"
                                         required
                                         minLength="8"
-                                        className="input-field pl-12"
+                                        className="input-field px-12"
                                         placeholder="Min 8 characters"
                                         value={formData.password}
                                         onChange={onChange}
@@ -111,14 +166,14 @@ const Signup = () => {
                             </div>
 
                             <div className="space-y-2 group">
-                                <label className="text-sm font-semibold text-slate-700 ml-1">Phone Number</label>
+                                <label className="text-sm font-semibold text-slate-700 ml-1 block text-center w-full">Phone Number</label>
                                 <div className="relative">
                                     <Phone className="absolute top-3.5 left-4 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                                     <input
                                         name="phone"
                                         type="text"
                                         required
-                                        className="input-field pl-12"
+                                        className="input-field px-12"
                                         placeholder="+91 98765 43210"
                                         value={formData.phone}
                                         onChange={onChange}
@@ -126,50 +181,33 @@ const Signup = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-2 group">
-                                <label className="text-sm font-semibold text-slate-700 ml-1">Select Your Zone</label>
-                                <div className="relative">
-                                    <MapPin className="absolute top-3.5 left-4 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                                    <select
-                                        name="zone"
-                                        required
-                                        className="input-field pl-12 appearance-none"
-                                        value={formData.zone}
-                                        onChange={onChange}
-                                    >
-                                        <option value="">Choose your residential area...</option>
-                                        <option value="North">North Zone</option>
-                                        <option value="South">South Zone</option>
-                                        <option value="East">East Zone</option>
-                                        <option value="West">West Zone</option>
-                                        <option value="Central">Central Zone</option>
-                                    </select>
-                                    <div className="absolute right-4 top-4 pointer-events-none text-slate-400">
-                                        <ArrowRight size={16} className="rotate-90" />
-                                    </div>
-                                </div>
-                            </div>
+                            <CustomSelect 
+                                name="zone"
+                                label="Select Your Zone"
+                                value={formData.zone}
+                                icon={MapPin}
+                                placeholder="Choose your area..."
+                                options={[
+                                    { label: 'North Zone', value: 'North' },
+                                    { label: 'South Zone', value: 'South' },
+                                    { label: 'East Zone', value: 'East' },
+                                    { label: 'West Zone', value: 'West' },
+                                    { label: 'Central Zone', value: 'Central' }
+                                ]}
+                            />
 
-                            <div className="space-y-2 group">
-                                <label className="text-sm font-semibold text-slate-700 ml-1">Register As</label>
-                                <div className="relative">
-                                    <User className="absolute top-3.5 left-4 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                                    <select
-                                        name="role"
-                                        required
-                                        className="input-field pl-12 appearance-none"
-                                        value={formData.role}
-                                        onChange={onChange}
-                                    >
-                                        <option value="citizen">Citizen</option>
-                                        <option value="collector">Collector</option>
-                                        <option value="admin">Admin</option>
-                                    </select>
-                                    <div className="absolute right-4 top-4 pointer-events-none text-slate-400">
-                                        <ArrowRight size={16} className="rotate-90" />
-                                    </div>
-                                </div>
-                            </div>
+                            <CustomSelect 
+                                name="role"
+                                label="Register As"
+                                value={formData.role}
+                                icon={User}
+                                placeholder="Select role"
+                                options={[
+                                    { label: 'Citizen', value: 'citizen' },
+                                    { label: 'Swachhta Mitra', value: 'Swachhta Mitra' },
+                                    { label: 'Admin', value: 'admin' }
+                                ]}
+                            />
                         </div>
 
                         <div className="pt-4">

@@ -65,16 +65,16 @@ const CitizenProfile = () => {
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
-                const dashboardEndpoint = user?.role === 'collector' 
-                    ? 'http://localhost:5000/api/dashboard/collector' 
-                    : 'http://localhost:5000/api/dashboard/citizen';
+                const dashboardEndpoint = (user?.role === 'collector' || user?.role === 'Swachhta Mitra') 
+                    ? '/api/dashboard/collector' 
+                    : '/api/dashboard/citizen';
                 
                 const [dashRes, badgeRes] = await Promise.all([
                     axios.get(dashboardEndpoint, { headers: { 'x-auth-token': token } }),
-                    axios.get('http://localhost:5000/api/badges/user', { headers: { 'x-auth-token': token } })
+                    axios.get('/api/badges/user', { headers: { 'x-auth-token': token } })
                 ]);
 
-                if (user?.role === 'collector') {
+                if (user?.role === 'collector' || user?.role === 'Swachhta Mitra') {
                     setStats({
                         totalRec: dashRes.data.stats.total || 0,
                         resolvedRec: dashRes.data.stats.completed || 0, // Using completed as resolved for badges
@@ -111,7 +111,7 @@ const CitizenProfile = () => {
         }
         setPasswordLoading(true);
         try {
-            await axios.put('http://localhost:5000/api/auth/change-password', 
+            await axios.put('/api/auth/change-password', 
                 { currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword },
                 { headers: { 'x-auth-token': token } }
             );
@@ -148,7 +148,7 @@ const CitizenProfile = () => {
                 ...editForm,
                 name: `${editForm.firstName} ${editForm.lastName}`.trim()
             };
-            const res = await axios.put('http://localhost:5000/api/auth/profile', updateData, {
+            const res = await axios.put('/api/auth/profile', updateData, {
                 headers: { 'x-auth-token': token }
             });
             updateUser(res.data);
@@ -185,17 +185,21 @@ const CitizenProfile = () => {
         "Paradise Planner", "Utopia Unit", "Nature Nexus", "World Wonder", "The Ultimate Green"
     ];
 
-    const unlockedCount = Math.min(Math.floor(stats.resolvedRec / 2), 100);
-    const earnedBadges = Array.from({ length: unlockedCount }, (_, i) => ({
-        id: i + 1,
-        name: i < badgeNames.length ? badgeNames[i] : `Achievement ${i + 1}`,
-        icon: i === 0 ? icons[0] : icons[i % icons.length]
-    }));
-
     const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
         month: 'long',
         year: 'numeric'
     }) : 'Jan 2025';
+
+    // 🔥 REAL DATA SYNC: Map real badges from DB to UI
+    const earnedBadges = React.useMemo(() => {
+        return badges.map((ub, i) => ({
+            id: ub._id,
+            name: ub.badgeId?.name || `Badge ${i + 1}`,
+            icon: icons[i % icons.length]
+        }));
+    }, [badges]);
+
+    const unlockedCount = earnedBadges.length;
 
     const [uploadMessage, setUploadMessage] = useState('');
 
@@ -221,7 +225,7 @@ const CitizenProfile = () => {
             try {
                 const base64data = reader.result;
                 const token = localStorage.getItem('token');
-                const res = await axios.put('http://localhost:5000/api/auth/profile/avatar', 
+                const res = await axios.put('/api/auth/profile/avatar', 
                     { avatar: base64data },
                     { headers: { 'x-auth-token': token } }
                 );

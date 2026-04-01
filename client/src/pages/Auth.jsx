@@ -241,7 +241,7 @@ export const Auth = () => {
                                                         className="w-full pl-10 pr-2 py-2 text-[14px] bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md outline-none focus:border-[#288379] focus:ring-1 focus:ring-[#288379] text-gray-900 dark:text-white transition-all appearance-none cursor-pointer"
                                                     >
                                                         <option value="citizen">Citizen</option>
-                                                        <option value="collector">Collector</option>
+                                                        <option value="Swachhta Mitra">Swachhta Mitra</option>
                                                         <option value="admin">Admin</option>
                                                     </select>
                                                 </div>

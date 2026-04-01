@@ -2,36 +2,87 @@ const express = require('express');
 const router = express.Router();
 const Report = require('../models/Report');
 const auth = require('../middleware/auth');
+const Notification = require('../models/Notification');
+const User = require('../models/User');
+const { checkAndAwardBadges } = require('../utils/badgeHandler');
 
 // @route   POST /api/reports
 // @desc    Submit a new garbage report
 // @access  Private (Citizen)
 router.post('/', auth, async (req, res) => {
     try {
-        const { garbageType, location, landmark, zone, description, photo, urgency } = req.body;
+        const { garbageType, location, city = 'Pune', zone, area, landmark, contactNumber, description, photos, urgency, initialPhotoCount } = req.body;
+
+        if (!photos || photos.length === 0) {
+            return res.status(400).json({ message: 'At least one photo is required' });
+        }
 
         const newReport = new Report({
             citizenId: req.user.id,
             garbageType,
             location,
-            landmark,
+            city,
             zone,
+            area,
+            landmark,
+            contactNumber,
             description,
-            photo,
+            photos,
             urgency,
+            initialPhotoCount: initialPhotoCount || (photos ? photos.length : 1),
             status: 'Pending'
         });
 
         const report = await newReport.save();
-        
-        // Award points for reporting (+10)
-        const User = require('../models/User');
-        await User.findByIdAndUpdate(req.user.id, { $inc: { rewardPoints: 10 } });
-        
-        // Check for badges
-        const { checkAndAwardBadges } = require('../utils/badgeHandler');
-        await checkAndAwardBadges(req.user.id);
-        
+
+        // 🔥 AUTHORITATIVE SCORING: Award +10 points for submission
+        const submitter = await User.findById(req.user.id);
+        if (submitter) {
+            await submitter.addPoints(10);
+            console.log(`[Score] +10 pts awarded to ${submitter.name} for report submission`);
+        }
+
+        console.log('--- NOTIFICATION DEBUG (POST REPORT) ---');
+        try {
+            const citizenNotif = new Notification({
+                user: req.user.id,
+                report: report._id,
+                title: 'Report Successfully Filed',
+                message: '✅ Your report is now active and you earned +10 points! Thank you for helping keep our surroundings clean.',
+                type: 'Reward',
+                points: 10
+            });
+            await citizenNotif.save();
+            console.log('--- CITIZEN REWARD SAVED (+10 pts) ---');
+        } catch (notifErr) {
+            console.error('FAILED to save citizen notification:', notifErr.message);
+        }
+
+        try {
+            // Include both roles and flexible zone check with regex
+            const collectors = await User.find({
+                role: { $in: ['Swachhta Mitra', 'collector'] },
+                zone: { $regex: `^${report.zone}$`, $options: 'i' }
+            });
+
+            console.log(`Found ${collectors.length} collectors in zone: "${report.zone}"`);
+            for (const collector of collectors) {
+                console.log('Notifying collector of New Task:', collector._id);
+                const newNotif = new Notification({
+                    user: collector._id,
+                    report: report._id,
+                    title: 'New Pickup Request',
+                    message: `📍 Action Required: Clean up in ${report.area || report.location}. Complete this to earn +50 points!`,
+                    type: 'New Task'
+                });
+                await newNotif.save();
+            }
+            console.log('Collector notifications processed');
+        } catch (collectorNotifErr) {
+            console.error('FAILED to save collector notifications:', collectorNotifErr.message);
+        }
+        console.log('--- END NOTIFICATION DEBUG ---');
+
         res.json(report);
     } catch (err) {
         console.error('Report submission error:', err);
@@ -48,29 +99,42 @@ router.post('/', auth, async (req, res) => {
 // @access  Private
 router.get('/', auth, async (req, res) => {
     try {
-        const { zone, status, citizenId, search, urgency, sortBy, page = 1, limit = 10 } = req.query;
+        console.log("--- FETCH REPORTS DEBUG ---");
+        console.log("User Data from Token:", req.user);
+
+        const { zone, status, citizenId, search, urgency, sortBy, page = 1, limit = 50 } = req.query;
         let query = {};
 
         // Base Filters
         if (zone) query.zone = zone;
         if (status && status !== 'All') query.status = status;
         if (urgency && urgency !== 'All') query.urgency = urgency;
-        
+
+        // Collector Context Logic
+        if (req.user.role === 'Swachhta Mitra' || req.user.role === 'collector') {
+            if (status === 'In Progress' || status === 'Resolved') {
+                query.collectorId = req.user.id;
+            }
+        }
+
         // Search Logic (Regex)
         if (search) {
             query.$or = [
                 { location: { $regex: search, $options: 'i' } },
+                { area: { $regex: search, $options: 'i' } },
                 { landmark: { $regex: search, $options: 'i' } },
                 { description: { $regex: search, $options: 'i' } }
             ];
         }
-        
-        // Citizen scope
+
+        // Citizen scope (SECURITY FEATURE)
         if (req.user.role === 'citizen') {
             query.citizenId = req.user.id;
         } else if (citizenId) {
             query.citizenId = citizenId;
         }
+
+        console.log("Generated MongoDB Query:", JSON.stringify(query, null, 2));
 
         // Sorting
         let sort = { createdAt: -1 };
@@ -82,14 +146,21 @@ router.get('/', auth, async (req, res) => {
         const limitNum = parseInt(limit);
         const skip = (pageNum - 1) * limitNum;
 
-        // Fetch counts and data
-        const totalReports = await Report.countDocuments(query);
-        const reports = await Report.find(query)
-            .sort(sort)
-            .skip(skip)
-            .limit(limitNum);
+        // Fetch counts and data PARALLELY for 2x performance
+        const [totalReports, reports] = await Promise.all([
+            Report.countDocuments(query),
+            Report.find(query)
+                .sort(sort)
+                .skip(skip)
+                .limit(limitNum)
+                .lean()
+        ]);
+
+        console.log(`Found ${reports.length} reports for this query.`);
+        console.log("--- DEBUG END ---");
 
         res.json({
+            success: true,
             reports,
             totalReports,
             totalPages: Math.ceil(totalReports / limitNum),
@@ -97,7 +168,7 @@ router.get('/', auth, async (req, res) => {
         });
     } catch (err) {
         console.error('Fetch reports error:', err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ success: false, message: 'Server Error: ' + err.message });
     }
 });
 
@@ -106,7 +177,9 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/:id', auth, async (req, res) => {
     try {
-        const report = await Report.findById(req.params.id).populate('citizenId', 'name email phone');
+        const report = await Report.findById(req.params.id)
+            .populate('citizenId', 'name email phone')
+            .lean();
         if (!report) return res.status(404).json({ message: 'Report not found' });
         res.json(report);
     } catch (err) {
@@ -133,15 +206,18 @@ router.put('/:id', auth, async (req, res) => {
             return res.status(400).json({ message: 'Only pending reports can be edited' });
         }
 
-        const { garbageType, location, landmark, zone, description, photo, urgency } = req.body;
-        
+        const { garbageType, location, city, zone, area, landmark, contactNumber, description, photos, urgency } = req.body;
+
         // Update fields
         if (garbageType) report.garbageType = garbageType;
         if (location) report.location = location;
-        if (landmark) report.landmark = landmark;
+        if (city) report.city = city;
         if (zone) report.zone = zone;
+        if (area) report.area = area;
+        if (landmark) report.landmark = landmark;
+        if (contactNumber) report.contactNumber = contactNumber;
         if (description) report.description = description;
-        if (photo) report.photo = photo;
+        if (photos) report.photos = photos;
         if (urgency) report.urgency = urgency;
 
         const updatedReport = await report.save();
@@ -183,38 +259,138 @@ router.delete('/:id', auth, async (req, res) => {
 // @access  Private (Collector/Admin)
 router.put('/:id/status', auth, async (req, res) => {
     try {
-        const { status } = req.body;
-        
+        const { status, photos, evidenceUploaded, initialPhotoCount } = req.body;
+
         let report = await Report.findById(req.params.id);
         if (!report) return res.status(404).json({ message: 'Report not found' });
 
+        const previousStatus = report.status;
+
         // If collector, they can only update if they are assigned or if it's pending in their zone
-        if (req.user.role === 'collector') {
+        if (req.user.role === 'Swachhta Mitra' || req.user.role === 'collector') {
             const User = require('../models/User');
             const user = await User.findById(req.user.id);
             if (report.zone !== user.zone) {
                 return res.status(403).json({ message: 'Not authorized for this zone' });
             }
-            
+
             // Set collectorId if not set
             if (!report.collectorId) {
                 report.collectorId = req.user.id;
             }
         }
 
-        report.status = status;
+        if (status) {
+            // If status is transitioning to In Progress for the first time, record current photo count
+            if (status === 'In Progress' && previousStatus === 'Pending') {
+                report.initialPhotoCount = report.photos.length;
+            }
+            report.status = status;
+        }
+        if (photos) report.photos = photos;
+        if (evidenceUploaded !== undefined) report.evidenceUploaded = evidenceUploaded;
+        if (initialPhotoCount !== undefined) report.initialPhotoCount = initialPhotoCount;
+
         await report.save();
 
+        let awardedBadges = [];
         // If report is resolved, award points (+50) and check for badges for the citizen
         if (status === 'Resolved') {
             const User = require('../models/User');
-            await User.findByIdAndUpdate(report.citizenId, { $inc: { rewardPoints: 50 } });
-            
-            const { checkAndAwardBadges } = require('../utils/badgeHandler');
-            await checkAndAwardBadges(report.citizenId);
+
+            // 🔥 AUTHORITATIVE SCORING: Award +50 points for Resolution
+            const [citizenUser, collectorUser] = await Promise.all([
+                User.findById(report.citizenId),
+                report.collectorId ? User.findById(report.collectorId) : Promise.resolve(null)
+            ]);
+
+            if (citizenUser) await citizenUser.addPoints(50);
+            if (collectorUser) await collectorUser.addPoints(50);
+
+            const badgeResults = await Promise.all([
+                checkAndAwardBadges(report.citizenId),
+                report.collectorId ? checkAndAwardBadges(report.collectorId) : Promise.resolve([])
+            ]);
+
+            // Combine awarded badges for response (if any were awarded to the current user)
+            const citizenAwarded = badgeResults[0] || [];
+            const collectorAwarded = badgeResults[1] || [];
+
+            if (req.user.role === 'citizen') awardedBadges = citizenAwarded;
+            else awardedBadges = collectorAwarded;
         }
 
-        res.json(report);
+        // --- RESTORED NOTIFICATION LOGIC ---
+        let citizenTitle = '';
+        let citizenMessage = '';
+        let collectorTitle = '';
+        let collectorMessage = '';
+
+        if (status === 'Resolved') {
+            citizenTitle = 'Report Resolved';
+            citizenMessage = '🎉 Great news! Your reported issue has been successfully resolved. You have been awarded +50 reward points!';
+            collectorTitle = 'Task Completed';
+            collectorMessage = '✅ Excellent work! You have successfully resolved the task. You earned +50 reward points!';
+        } else if (status === 'In Progress') {
+            if (previousStatus === 'Pending') {
+                citizenTitle = 'Request Accepted';
+                citizenMessage = '📥 Your request has been accepted by a Swachhta Mitra.';
+                collectorTitle = 'Task Accepted';
+                collectorMessage = '📥 You accepted a new cleanup request.';
+            } else {
+                citizenTitle = 'Work in Progress';
+                citizenMessage = '🚧 Cleaning work is in progress at your reported location.';
+                collectorTitle = 'Work in Progress';
+                collectorMessage = '🚧 You started cleaning work.';
+            }
+        } else if (evidenceUploaded === true) {
+            citizenTitle = 'Evidence Uploaded';
+            citizenMessage = '📸 Evidence has been uploaded. You can view it now.';
+        }
+
+        // Save Citizen Notification
+        if (citizenTitle) {
+            try {
+                const citizenNotif = new Notification({
+                    user: report.citizenId,
+                    report: report._id,
+                    title: citizenTitle,
+                    message: (citizenTitle === 'Report Resolved')
+                        ? `🎉 Congratulations! Your report from ${report.area} is now Resolved. You have earned +50 extra reward points!`
+                        : citizenMessage,
+                    type: (citizenTitle === 'Report Resolved') ? 'Reward' : 'Status Update',
+                    points: (citizenTitle === 'Report Resolved') ? 50 : 0
+                });
+                await citizenNotif.save();
+            } catch (err) {
+                console.error('Failed to notify citizen:', err.message);
+            }
+        }
+
+        // Save Collector Notification (Self)
+        if (collectorTitle && (req.user.role === 'Swachhta Mitra' || req.user.role === 'collector')) {
+            try {
+                const selfNotif = new Notification({
+                    user: req.user.id,
+                    report: report._id,
+                    title: (collectorTitle === 'Request Accepted') ? 'Pickup Assigned' : collectorTitle,
+                    message: (collectorTitle === 'Task Completed')
+                        ? `✅ Task cleanup verified! You've successfully resolved this report and earned +50 points.`
+                        : collectorMessage,
+                    type: (collectorTitle === 'Task Completed') ? 'Reward' : 'New Task',
+                    points: (collectorTitle === 'Task Completed') ? 50 : 0
+                });
+                await selfNotif.save();
+            } catch (err) {
+                console.error('Failed to notify collector:', err.message);
+            }
+        }
+
+        res.json({
+            report,
+            awardedBadges,
+            message: status === 'Resolved' ? 'Congratulations! Report Resolved and Points Awarded.' : 'Status Updated.'
+        });
     } catch (err) {
         console.error('Update status error:', err.message);
         res.status(500).send('Server Error');

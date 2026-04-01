@@ -12,7 +12,7 @@ router.get('/overview', auth, async (req, res) => {
         return res.status(403).json({ message: 'Access denied.' });
     }
 
-    try {
+    try {   
         const stats = await Report.aggregate([
             {
                 $group: {
@@ -35,7 +35,7 @@ router.get('/overview', auth, async (req, res) => {
             { $sort: { count: -1 } }
         ]);
 
-        const topCollectors = await Report.aggregate([
+        const topSwachhtaMitras = await Report.aggregate([
             { $match: { status: "Resolved", collectorId: { $exists: true } } },
             {
                 $group: {
@@ -50,13 +50,13 @@ router.get('/overview', auth, async (req, res) => {
                     from: "users",
                     localField: "_id",
                     foreignField: "_id",
-                    as: "collector"
+                    as: "swachhtaMitra"
                 }
             },
-            { $unwind: "$collector" },
+            { $unwind: "$swachhtaMitra" },
             {
                 $project: {
-                    name: "$collector.name",
+                    name: "$swachhtaMitra.name",
                     completed: 1
                 }
             }
@@ -65,7 +65,7 @@ router.get('/overview', auth, async (req, res) => {
         res.json({
             stats: stats[0] || { total: 0, pending: 0, inProgress: 0, resolved: 0 },
             zoneData: zones.map(z => ({ name: z._id, count: z.count })),
-            topCollectors
+            topSwachhtaMitras
         });
     } catch (err) {
         console.error('Analytics Overview Error:', err.message);
