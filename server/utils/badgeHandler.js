@@ -42,7 +42,6 @@ const checkAndAwardBadges = async (userId) => {
                     console.log(`AWARDING BADGE: ${badge.name} to user: ${userId}`);
                     const newBadgeRecord = await UserBadge.create({ userId, badgeId: badge._id });
                     console.log(`✓ USERBADGE RECORD SAVED: ${newBadgeRecord._id} for badge: ${badge.name}`);
-                    awardedThisTurn.push(badge.name);
 
                     // 4. Fetch User Role for personalized messaging
                     const User = require('../models/User');

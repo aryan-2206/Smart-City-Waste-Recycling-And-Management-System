@@ -21,12 +21,14 @@ const UserSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['citizen', 'Swachhta Mitra', 'admin'],
+        enum: ['citizen', 'Swachhta Mitra'],
         default: 'citizen'
     },
     zone: {
         type: String,
-        required: false
+        required: false,
+        lowercase: true,
+        trim: true
     },
     avatar: {
         type: String,
@@ -76,7 +78,15 @@ const UserSchema = new mongoose.Schema({
     },
     city: {
         type: String,
-        default: ""
+        default: "",
+        lowercase: true,
+        trim: true
+    },
+    area: {
+        type: String,
+        default: "",
+        lowercase: true,
+        trim: true
     },
     postalCode: {
         type: String,

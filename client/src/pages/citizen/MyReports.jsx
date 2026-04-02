@@ -51,20 +51,8 @@ const MyReports = () => {
     const [hoveredCard, setHoveredCard] = useState(null);
 
     // Core Data
-    // 🚀 High-Speed PERSISTENT UNIVERSAL CACHE (Synced across Citizen/Collector)
-    const CACHE_KEY = `ecoPulse_universal_reports_cache_${user?._id || 'guest'}`;
-
-    const [reports, setReports] = useState(() => {
-        try {
-            const cached = localStorage.getItem(CACHE_KEY);
-            return cached ? JSON.parse(cached) : [];
-        } catch (e) { return []; }
-    });
-    
-    const [loading, setLoading] = useState(() => {
-        const cached = localStorage.getItem(CACHE_KEY);
-        return !cached; // only true if no cache
-    });
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     // Sync Filters State
@@ -92,7 +80,6 @@ const MyReports = () => {
         // --- INSTANT OPTIMISTIC DELETE ---
         const updatedReports = reports.filter(r => r._id !== idToRemove);
         setReports(updatedReports);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedReports));
         setDeletingReportId(null);
         
         toast.success('Report removed from list');
@@ -284,7 +271,6 @@ const MyReports = () => {
             console.log(`Setting state with ${finalReports.length} reports.`);
             setReports(finalReports);
             setFetchedReports({}); // CLEAR CACHE so hover/click gets fresh evidence if updated
-            localStorage.setItem(CACHE_KEY, JSON.stringify(finalReports));
             setError(''); // Clear any previous errors
         } catch (err) {
             console.error("FETCH ERROR:", err.response?.data || err.message);

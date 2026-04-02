@@ -10,10 +10,6 @@ const auth = require('../middleware/auth');
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        // Start time for "today"
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
         const leaderboard = await User.aggregate([
             // 🚀 STEP 1: Fast sort by totalScore and limit to 100
             { $sort: { totalScore: -1 } },
@@ -63,14 +59,12 @@ router.get('/', async (req, res) => {
                         }
                     },
                     badgeCount: { $size: "$badges" },
+                    // 🔥 PRODUCTION FIX: Native Mongo comparison with Timezone support
                     isSameDay: {
-                        $cond: [
-                            { $eq: ["$lastScoreUpdate", null] },
-                            false,
-                            { $eq: [
-                                { $dateToString: { format: "%Y-%m-%d", date: "$lastScoreUpdate" } },
-                                { $dateToString: { format: "%Y-%m-%d", date: today } }
-                            ]}
+                        $and: [
+                            { $eq: [{ $dayOfMonth: { date: "$lastScoreUpdate", timezone: "Asia/Kolkata" } }, { $dayOfMonth: { date: "$$NOW", timezone: "Asia/Kolkata" } }] },
+                            { $eq: [{ $month: { date: "$lastScoreUpdate", timezone: "Asia/Kolkata" } }, { $month: { date: "$$NOW", timezone: "Asia/Kolkata" } }] },
+                            { $eq: [{ $year: { date: "$lastScoreUpdate", timezone: "Asia/Kolkata" } }, { $year: { date: "$$NOW", timezone: "Asia/Kolkata" } }] }
                         ]
                     }
                 }
@@ -85,7 +79,11 @@ router.get('/', async (req, res) => {
                     avatar: 1,
                     totalScore: { $ifNull: ["$totalScore", 0] },
                     dailyScore: {
-                        $cond: [{ $eq: ["$isSameDay", true] }, { $ifNull: ["$dailyScore", 0] }, 0]
+                        $cond: [
+                            "$isSameDay",
+                            { $ifNull: ["$dailyScore", 0] },
+                            0
+                        ]
                     },
                     totalReports: 1,
                     resolvedReports: 1,

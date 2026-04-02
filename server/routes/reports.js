@@ -11,18 +11,24 @@ const { checkAndAwardBadges } = require('../utils/badgeHandler');
 // @access  Private (Citizen)
 router.post('/', auth, async (req, res) => {
     try {
-        const { garbageType, location, city = 'Pune', zone, area, landmark, contactNumber, description, photos, urgency, initialPhotoCount } = req.body;
+        const { garbageType, location, area, landmark, contactNumber, description, photos, urgency, initialPhotoCount } = req.body;
 
         if (!photos || photos.length === 0) {
             return res.status(400).json({ message: 'At least one photo is required' });
+        }
+
+        // 🔥 AUTHORITATIVE CITY/ZONE: Always use reporting user's profile data
+        const submitter = await User.findById(req.user.id);
+        if (!submitter) {
+            return res.status(404).json({ message: 'User not found' });
         }
 
         const newReport = new Report({
             citizenId: req.user.id,
             garbageType,
             location,
-            city,
-            zone,
+            city: submitter.city, // Inherit from profile
+            zone: submitter.zone, // Inherit from profile
             area,
             landmark,
             contactNumber,
@@ -35,12 +41,9 @@ router.post('/', auth, async (req, res) => {
 
         const report = await newReport.save();
 
-        // 🔥 AUTHORITATIVE SCORING: Award +10 points for submission
-        const submitter = await User.findById(req.user.id);
-        if (submitter) {
-            await submitter.addPoints(10);
-            console.log(`[Score] +10 pts awarded to ${submitter.name} for report submission`);
-        }
+        // 🔥 Award +10 points for submission
+        await submitter.addPoints(10);
+        console.log(`[Score] +10 pts awarded to ${submitter.name} for report submission`);
 
         console.log('--- NOTIFICATION DEBUG (POST REPORT) ---');
         try {
@@ -59,10 +62,14 @@ router.post('/', auth, async (req, res) => {
         }
 
         try {
-            // Include both roles and flexible zone check with regex
+            const cleanReportZone = (report.zone || "").trim().toLowerCase();
+            const cleanReportCity = (report.city || "").trim().toLowerCase();
+
+            // STRICT MATCH: Only collectors in exact city and zone
             const collectors = await User.find({
                 role: { $in: ['Swachhta Mitra', 'collector'] },
-                zone: { $regex: `^${report.zone}$`, $options: 'i' }
+                zone: cleanReportZone,
+                city: cleanReportCity
             });
 
             console.log(`Found ${collectors.length} collectors in zone: "${report.zone}"`);
@@ -102,18 +109,45 @@ router.get('/', auth, async (req, res) => {
         console.log("--- FETCH REPORTS DEBUG ---");
         console.log("User Data from Token:", req.user);
 
-        const { zone, status, citizenId, search, urgency, sortBy, page = 1, limit = 50 } = req.query;
+        const { zone, status, citizenId, search, urgency, sortBy, from, to, page = 1, limit = 50 } = req.query;
         let query = {};
+
+        // Date Range Logic
+        if (from || to) {
+            query.createdAt = {};
+            if (from) query.createdAt.$gte = new Date(from);
+            if (to) {
+                const endDate = new Date(to);
+                endDate.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = endDate;
+            }
+        }
 
         // Base Filters
         if (zone) query.zone = zone;
         if (status && status !== 'All') query.status = status;
         if (urgency && urgency !== 'All') query.urgency = urgency;
 
-        // Collector Context Logic
+        // Collector Context Logic (Auto-filter by City/Zone)
         if (req.user.role === 'Swachhta Mitra' || req.user.role === 'collector') {
-            if (status === 'In Progress' || status === 'Resolved') {
-                query.collectorId = req.user.id;
+            const user = await User.findById(req.user.id);
+            if (user) {
+                const cleanCity = (user.city || "").trim().toLowerCase();
+                const cleanZone = (user.zone || "").trim().toLowerCase();
+
+                if (status === 'In Progress' || status === 'Resolved') {
+                    query.collectorId = req.user.id;
+                } else {
+                    // STRICT MATCH: No regex, exact lowercase match
+                    query.city = cleanCity;
+                    query.zone = cleanZone;
+                    
+                    // SECURITY: Only Pending or My pickups
+                    query.$or = [
+                        { status: 'Pending' },
+                        { collectorId: req.user.id }
+                    ];
+                }
             }
         }
 
@@ -136,35 +170,54 @@ router.get('/', auth, async (req, res) => {
 
         console.log("Generated MongoDB Query:", JSON.stringify(query, null, 2));
 
-        // Sorting
+        // Sorting Logic
         let sort = { createdAt: -1 };
         if (sortBy === 'oldest') sort = { createdAt: 1 };
-        if (sortBy === 'urgency') sort = { urgency: -1 };
 
-        // Pagination calculations
-        const pageNum = parseInt(page);
-        const limitNum = parseInt(limit);
-        const skip = (pageNum - 1) * limitNum;
+        let fetchQuery;
+        if (sortBy === 'priority-hl' || sortBy === 'priority-lh') {
+            // Enhanced Priority Sorting using Aggregation
+            fetchQuery = Report.aggregate([
+                { $match: query },
+                {
+                    $addFields: {
+                        urgencyWeight: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ["$urgency", "High"] }, then: 3 },
+                                    { case: { $eq: ["$urgency", "Medium"] }, then: 2 },
+                                    { case: { $eq: ["$urgency", "Low"] }, then: 1 }
+                                ],
+                                default: 0
+                            }
+                        }
+                    }
+                },
+                { $sort: { urgencyWeight: sortBy === 'priority-hl' ? -1 : 1, createdAt: -1 } },
+                { $skip: (parseInt(page) - 1) * parseInt(limit) },
+                { $limit: parseInt(limit) }
+            ]);
+        } else {
+            // Standard fetch for simple sorts
+            fetchQuery = Report.find(query)
+                .sort(sort)
+                .skip((parseInt(page) - 1) * parseInt(limit))
+                .limit(parseInt(limit))
+                .lean();
+        }
 
-        // Fetch counts and data PARALLELY for 2x performance
+        // Parallel count and fetch
         const [totalReports, reports] = await Promise.all([
             Report.countDocuments(query),
-            Report.find(query)
-                .sort(sort)
-                .skip(skip)
-                .limit(limitNum)
-                .lean()
+            fetchQuery
         ]);
-
-        console.log(`Found ${reports.length} reports for this query.`);
-        console.log("--- DEBUG END ---");
 
         res.json({
             success: true,
             reports,
             totalReports,
-            totalPages: Math.ceil(totalReports / limitNum),
-            currentPage: pageNum
+            totalPages: Math.ceil(totalReports / parseInt(limit)),
+            currentPage: parseInt(page)
         });
     } catch (err) {
         console.error('Fetch reports error:', err.message);
@@ -246,8 +299,13 @@ router.delete('/:id', auth, async (req, res) => {
             }
         }
 
+        // 🔥 CASCADING DELETE: Remove all notifications related to this report first
+        await Notification.deleteMany({ report: req.params.id });
+        
+        // Then remove the report itself
         await Report.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Report removed' });
+        
+        res.json({ message: 'Report and all associated activity permanently removed' });
     } catch (err) {
         console.error('Delete report error:', err.message);
         res.status(500).send('Server Error');
@@ -270,8 +328,8 @@ router.put('/:id/status', auth, async (req, res) => {
         if (req.user.role === 'Swachhta Mitra' || req.user.role === 'collector') {
             const User = require('../models/User');
             const user = await User.findById(req.user.id);
-            if (report.zone !== user.zone) {
-                return res.status(403).json({ message: 'Not authorized for this zone' });
+            if (report.zone !== user.zone || report.city !== user.city) {
+                return res.status(403).json({ message: 'Not authorized for this city/zone' });
             }
 
             // Set collectorId if not set

@@ -1,6 +1,15 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
+// 🔥 SETUP GLOBAL AXIOS INTERCEPTOR FOR AUTOMATIC TOKEN ATTACHMENT
+axios.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) config.headers['x-auth-token'] = token;
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
@@ -25,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const loadUser = async () => {
             if (token) {
+                // Ensure header is set for initial profile call
                 axios.defaults.headers.common['x-auth-token'] = token;
                 try {
                     const res = await axios.get('/api/auth/profile');
@@ -56,6 +66,16 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post('/api/auth/signup', userData);
             let user = res.data.user;
             if (user.role === 'collector') user.role = 'Swachhta Mitra';
+            
+            // 👤 Cleanup before session start
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('citizen_dashboard_data');
+            localStorage.removeItem('collector_dashboard_data');
+
+            // ✅ SET HEADER IMMEDIATELY (Fixes race condition)
+            axios.defaults.headers.common['x-auth-token'] = res.data.token;
+            
             setToken(res.data.token);
             setUser(user);
             localStorage.setItem('token', res.data.token);
@@ -71,6 +91,16 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post('/api/auth/login', { email, password });
             let user = res.data.user;
             if (user.role === 'collector') user.role = 'Swachhta Mitra';
+            
+            // 👤 Cleanup before session start
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('citizen_dashboard_data');
+            localStorage.removeItem('collector_dashboard_data');
+
+            // ✅ SET HEADER IMMEDIATELY (Fixes race condition)
+            axios.defaults.headers.common['x-auth-token'] = res.data.token;
+            
             setToken(res.data.token);
             setUser(user);
             localStorage.setItem('token', res.data.token);
@@ -86,6 +116,14 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post('/api/auth/google', { token: credentialToken, role: selectedRole });
             let user = res.data.user;
             if (user.role === 'collector') user.role = 'Swachhta Mitra';
+            
+            // 👤 Cleanup
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            
+            // ✅ SET HEADER IMMEDIATELY
+            axios.defaults.headers.common['x-auth-token'] = res.data.token;
+
             setToken(res.data.token);
             setUser(user);
             localStorage.setItem('token', res.data.token);
@@ -103,6 +141,10 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('user');
         localStorage.removeItem('citizen_dashboard_data');
         localStorage.removeItem('collector_dashboard_data');
+        delete axios.defaults.headers.common['x-auth-token'];
+        
+        // ✅ redirect to login for a fresh start
+        window.location.href = "/login";
     };
 
     const updateUser = (updatedUser) => {

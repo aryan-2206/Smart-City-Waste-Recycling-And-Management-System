@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 const auth = require('../middleware/auth');
 const sendEmail = require('../utils/sendEmail');
 const { OAuth2Client } = require('google-auth-library');
@@ -14,22 +15,43 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // @desc    Register a new user
 router.post('/signup', async (req, res) => {
     try {
-        const { name, email, password, phone, zone, role } = req.body;
+        const { name, email, password, phone, role } = req.body;
+        const city = req.body.city?.trim();
+        const zone = req.body.zone?.trim();
+        const area = req.body.area?.trim();
 
         // Check if user already exists
-        let user = await User.findOne({ email });
-        if (user) {
+        const emailLower = email.toLowerCase().trim();
+        let user = await User.findOne({ email: emailLower });
+        let admin = await Admin.findOne({ email: emailLower });
+        
+        if (user || admin) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        user = new User({
-            name,
-            email,
-            password,
-            phone,
-            zone,
-            role: role || 'citizen'
-        });
+        if (role === 'admin') {
+            user = new Admin({
+                name: name?.trim(),
+                email: emailLower,
+                password,
+                phone,
+                city,
+                zone: zone || 'All',
+                area,
+                role: 'admin'
+            });
+        } else {
+            user = new User({
+                name: name?.trim(),
+                email: emailLower,
+                password,
+                phone,
+                city,
+                zone,
+                area,
+                role: (role || 'citizen').trim()
+            });
+        }
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
@@ -71,10 +93,22 @@ router.post('/signup', async (req, res) => {
 // @desc    Authenticate user & get token
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { password } = req.body;
+        const email = req.body.email?.toLowerCase().trim();
 
-        // Check if user exists
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        // Check if user exists in either collection (Strict Lowercase Match)
         let user = await User.findOne({ email });
+        let is_admin = false;
+
+        if (!user) {
+            user = await Admin.findOne({ email });
+            is_admin = true;
+        }
+
         if (!user) {
             return res.status(400).json({ message: 'Email incorrect' });
         }
@@ -131,7 +165,12 @@ router.get('/users', async (req, res) => {
 // @desc    Get current user profile
 router.get('/profile', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
+        // Try to find in User or Admin collection
+        let user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            user = await Admin.findById(req.user.id).select('-password');
+        }
+        
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -148,7 +187,7 @@ router.get('/profile', auth, async (req, res) => {
 // @desc    Update user profile
 router.put('/profile', auth, async (req, res) => {
     try {
-        const { name, phone, zone, city, postalCode } = req.body;
+        const { name, phone, zone, city, area, postalCode } = req.body;
         const userId = req.user.id;
 
         // Build profile object
@@ -157,14 +196,22 @@ router.put('/profile', auth, async (req, res) => {
         if (phone) profileFields.phone = phone;
         if (zone) profileFields.zone = zone;
         if (city) profileFields.city = city;
+        if (area) profileFields.area = area;
         if (postalCode) profileFields.postalCode = postalCode;
 
         let user = await User.findById(userId);
+        let Model = User;
+
+        if (!user) {
+            user = await Admin.findById(userId);
+            Model = Admin;
+        }
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        user = await User.findByIdAndUpdate(
+        user = await Model.findByIdAndUpdate(
             userId,
             { $set: profileFields },
             { new: true }
@@ -244,7 +291,11 @@ router.put('/change-password', auth, async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
     try {
         const email = req.body.email?.toLowerCase().trim();
-        const user = await User.findOne({ email });
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = await Admin.findOne({ email });
+        }
+        
         if (!user) {
             return res.status(404).json({ message: 'User not found with this email' });
         }
@@ -283,10 +334,17 @@ router.put('/reset-password/:token', async (req, res) => {
             .update(req.params.token)
             .digest('hex');
 
-        const user = await User.findOne({
+        let user = await User.findOne({
             resetPasswordToken,
             resetPasswordExpire: { $gt: Date.now() },
         });
+
+        if (!user) {
+            user = await Admin.findOne({
+                resetPasswordToken,
+                resetPasswordExpire: { $gt: Date.now() },
+            });
+        }
 
         if (!user) {
             return res.status(400).json({ message: 'Invalid or expired token' });
@@ -311,7 +369,11 @@ router.put('/reset-password/:token', async (req, res) => {
 router.post('/verify-email', async (req, res) => {
     try {
         const email = req.body.email?.toLowerCase().trim();
-        const user = await User.findOne({ email });
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = await Admin.findOne({ email });
+        }
+        
         if (!user) {
             return res.status(404).json({ message: 'Email not found in database' });
         }
@@ -328,7 +390,10 @@ router.post('/direct-reset-password', async (req, res) => {
     try {
         const email = req.body.email?.toLowerCase().trim();
         const { password } = req.body;
-        const user = await User.findOne({ email });
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = await Admin.findOne({ email });
+        }
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -359,17 +424,31 @@ router.post('/google', async (req, res) => {
     
     // Check if user exists
     let user = await User.findOne({ email });
-    if (!user) {
-      // Create user if not exists
-      user = await User.create({
-        name: name,
-        email: email,
-        password: '',
-        phone: 'Not provided', // default since it was required
-        zone: 'Unassigned', // default since it was required
-        role: role || 'citizen',
-        isGoogleAuth: true
-      });
+    let admin = await Admin.findOne({ email });
+
+    if (!user && !admin) {
+      if (role === 'admin') {
+          user = await Admin.create({
+              name: name,
+              email: email,
+              password: '',
+              phone: 'Not provided',
+              zone: 'All',
+              role: 'admin'
+          });
+      } else {
+          user = await User.create({
+              name: name,
+              email: email,
+              password: '',
+              phone: 'Not provided',
+              zone: 'Unassigned',
+              role: role || 'citizen',
+              isGoogleAuth: true
+          });
+      }
+    } else {
+        user = user || admin;
     }
 
     // Generate JWT token

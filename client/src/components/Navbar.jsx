@@ -52,26 +52,20 @@ const Navbar = () => {
                         {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                     </button>
 
+                    {/* Auth Button (Login or Dashboard) */}
                     {!user ? (
                         <Link to="/login" className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95 group">
                             <UserIcon size={18} className="group-hover:scale-110 transition-transform" />
                             <span>Login</span>
                         </Link>
                     ) : (
-                        <div className="flex items-center space-x-6">
-                            <Link to={`/${user.role === 'Swachhta Mitra' ? 'swachhta-mitra' : user.role}/dashboard`} className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 hover:text-emerald-600 font-bold transition-colors">
-                                <UserIcon size={18} />
-                                <span>Dashboard</span>
-                            </Link>
-
-                            <button
-                                onClick={logout}
-                                className="flex items-center space-x-1.5 text-red-500 hover:text-red-600 font-black text-sm uppercase tracking-wider transition-colors"
-                            >
-                                <LogOut size={18} />
-                                <span>Logout</span>
-                            </button>
-                        </div>
+                        <Link 
+                            to={`/${user.role === 'Swachhta Mitra' ? 'swachhta-mitra' : user.role}/dashboard`} 
+                            className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95 group"
+                        >
+                            <UserIcon size={18} className="group-hover:scale-110 transition-transform" />
+                            <span>Dashboard</span>
+                        </Link>
                     )}
                 </div>
 
@@ -84,9 +78,16 @@ const Navbar = () => {
                         {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                     </button>
 
-                    {!user && (
+                    {!user ? (
                         <Link to="/login" className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">
                             Login
+                        </Link>
+                    ) : (
+                        <Link 
+                            to={`/${user.role === 'Swachhta Mitra' ? 'swachhta-mitra' : user.role}/dashboard`} 
+                            className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                        >
+                            Dashboard
                         </Link>
                     )}
 
@@ -123,24 +124,6 @@ const Navbar = () => {
                                     )}
                                 </Link>
                             ))}
-                            
-                            {user && (
-                                <>
-                                    <Link
-                                        to={`/${user.role === 'Swachhta Mitra' ? 'swachhta-mitra' : user.role}/dashboard`}
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className="w-full max-w-[280px] text-center p-2 font-bold text-sm text-slate-600 dark:text-slate-200 hover:text-emerald-600"
-                                    >
-                                        Dashboard
-                                    </Link>
-                                    <button
-                                        onClick={() => { logout(); setIsMenuOpen(false); }}
-                                        className="w-full max-w-[280px] text-center p-2 font-bold text-sm text-red-500 hover:text-red-700 mt-2"
-                                    >
-                                        Logout
-                                    </button>
-                                </>
-                            )}
                         </div>
                     </motion.div>
                 )}

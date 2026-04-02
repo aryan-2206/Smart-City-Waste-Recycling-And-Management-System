@@ -22,6 +22,16 @@ const Home = () => {
     const location = useLocation();
     const { theme, toggleTheme } = useTheme();
     const { user } = useAuth();
+    
+    // 🔥 Reload -> Home Logic (Modern API)
+    React.useEffect(() => {
+        const navEntries = performance.getEntriesByType("navigation");
+        const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+        
+        if (user && isReload) {
+            navigate('/home');
+        }
+    }, [user, navigate]);
 
     // Determine active tab from current route
     const isAbout = location.pathname === '/about';
@@ -39,7 +49,7 @@ const Home = () => {
         { label: 'Total Reports', value: '1,200+', icon: <FileText /> },
         { label: 'Active Citizens', value: '850+', icon: <User /> },
         { label: 'Reports Resolved', value: '98%', icon: <CheckCircle2 /> },
-        { label: 'City Zones Covered', value: '18+', icon: <MapPin /> }
+        { label: 'Cities Covered', value: '1,000+', icon: <MapPin /> }
     ];
 
     // Feature Cards
@@ -205,7 +215,7 @@ const Home = () => {
                                                 </div>
                                                 <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
                                                     <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5">New Reports</p>
-                                                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">12 Urgent in Zone A</span>
+                                                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">12 Urgent in Pune</span>
                                                 </div>
                                             </div>
 
@@ -269,7 +279,7 @@ const Home = () => {
                                     { label: 'Total Reports', value: '1,200+', icon: <FileText size={22} />, color: 'bg-emerald-500/10 text-emerald-600' },
                                     { label: 'Active Citizens', value: '850+', icon: <User size={22} />, color: 'bg-blue-500/10 text-blue-600' },
                                     { label: 'Reports Resolved', value: '98%', icon: <CheckCircle2 size={22} />, color: 'bg-teal-500/10 text-teal-600' },
-                                    { label: 'City Zones Covered', value: '18+', icon: <MapPin size={22} />, color: 'bg-purple-500/10 text-purple-600' }
+                                    { label: 'Cities Covered', value: '1,000+', icon: <MapPin size={22} />, color: 'bg-purple-500/10 text-purple-600' }
                                 ].map((stat, i) => (
                                     <motion.div
                                         key={i}

@@ -60,7 +60,7 @@ export const Leaderboard = () => {
         setRefreshKey(prev => prev + 1);
         setTimeout(() => {
             setIsRefreshing(false);
-        }, 600);
+        }, 100); // ⚡ Ultra-fast: 0.1s delay for near-instant data sync feel
     };
 
     const confirmDelete = async () => {
@@ -164,7 +164,7 @@ export const Leaderboard = () => {
                 key={refreshKey}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.3 }} // ⚡ Faster entry for better UX
                 className="space-y-6"
             >
                 {/* Filter Bar */}

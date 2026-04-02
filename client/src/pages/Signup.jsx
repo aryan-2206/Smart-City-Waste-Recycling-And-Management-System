@@ -18,11 +18,33 @@ const Signup = () => {
     const { signup } = useAuth();
     const navigate = useNavigate();
 
-    const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const onChange = e => {
+        const { name, value } = e.target;
+        if (name === 'phone') {
+            // Only allow digits and limit to 10 characters
+            const onlyNums = value.replace(/[^0-9]/g, '').slice(0, 10);
+            setFormData({ ...formData, [name]: onlyNums });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
+    };
 
     const onSubmit = async e => {
         if (e) e.preventDefault();
         setError('');
+
+        // 🛡️ Password Validation
+        if (formData.password.length < 8) {
+            setError('Password must be at least 8 characters long');
+            return;
+        }
+
+        // 🛡️ Phone Validation
+        if (formData.phone.length !== 10) {
+            setError('Phone number must be exactly 10 digits');
+            return;
+        }
+
         setIsLoading(true);
         try {
             await signup(formData);
@@ -172,9 +194,11 @@ const Signup = () => {
                                     <input
                                         name="phone"
                                         type="text"
+                                        inputMode="numeric"
+                                        maxLength="10"
                                         required
                                         className="input-field px-12"
-                                        placeholder="+91 98765 43210"
+                                        placeholder="9988776655"
                                         value={formData.phone}
                                         onChange={onChange}
                                     />

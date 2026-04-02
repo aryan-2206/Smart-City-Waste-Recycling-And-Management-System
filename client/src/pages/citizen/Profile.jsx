@@ -275,7 +275,7 @@ const CitizenProfile = () => {
                     <p className="text-slate-500 font-bold mb-2 capitalize">{user?.role || 'Citizen'}</p>
                     <div className="flex items-center gap-2 text-slate-400 font-medium text-sm">
                         <MapPin size={16} />
-                        {user?.zone || 'Global'} Zone
+                        <span className="capitalize">{user?.zone || 'Global'}</span> Zone
                     </div>
                     {uploadMessage && (
                         <p className="text-[10px] font-bold text-emerald-500 mt-2 animate-bounce">
@@ -345,7 +345,7 @@ const CitizenProfile = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 sm:gap-y-10">
                     <div>
                         <p className="sm:text-[14px] text-[11px] font-black text-slate-800 dark:text-slate-100 mb-1">Assigned Zone</p>
-                        <p className="sm:text-[12px] text-[10px] font-bold text-slate-600 dark:text-slate-400">{user?.zone || '———'} Zone</p>
+                        <p className="sm:text-[12px] text-[10px] font-bold text-slate-600 dark:text-slate-400 capitalize">{user?.zone || '———'} Zone</p>
                     </div>
                     <div>
                         <p className="sm:text-[14px] text-[11px] font-black text-slate-800 dark:text-slate-100 mb-1">City</p>
@@ -497,7 +497,7 @@ const CitizenProfile = () => {
                                         <label className="text-[0.875rem] text-[#666666] dark:text-gray-300 font-medium ml-0.5">Assigned Zone</label>
                                         <input 
                                             type="text"
-                                            value={`${user?.zone || 'Global'} Zone`}
+                                            value={`${(user?.zone?.charAt(0).toUpperCase() + user?.zone?.slice(1)) || 'Global'} Zone`}
                                             disabled
                                             className="w-full h-[2.5rem] px-3 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-slate-900 text-gray-400 cursor-not-allowed text-[0.875rem]"
                                         />

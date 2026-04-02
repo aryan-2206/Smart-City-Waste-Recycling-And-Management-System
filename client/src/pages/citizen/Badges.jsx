@@ -10,11 +10,8 @@ import PageHeader from '../../components/PageHeader';
 const Badges = () => {
     const { token } = useAuth();
     const [earnedBadges, setEarnedBadges] = useState([]);
-    const [stats, setStats] = useState(() => {
-        const cached = localStorage.getItem('citizen_dashboard_data');
-        const parsed = cached ? JSON.parse(cached) : null;
-        return { resolved: parsed?.stats?.resolved || 0 };
-    });
+    const [stats, setStats] = useState({ resolved: 0 });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -25,9 +22,10 @@ const Badges = () => {
                 ]);
                 setStats({ resolved: dashRes.data?.stats?.resolved || 0 });
                 setEarnedBadges(badgeRes.data);
-                localStorage.setItem('citizen_dashboard_data', JSON.stringify(dashRes.data));
             } catch (err) {
                 console.error('Error fetching stats:', err);
+            } finally {
+                setLoading(false);
             }
         };
         if (token) fetchStats();

@@ -283,27 +283,7 @@ const SubmitReport = ({ isEdit = false }) => {
 
             toast.success(res.data?.message || (isEdit ? 'Report updated successfully!' : 'Report submitted successfully!'));
             
-            // ⚡ INSTANT UI SYNC: Update the local dashboard cache 
-            try {
-                // Use Auth Context for ID if available, otherwise fallback (match MyReports.jsx)
-                // Since this is SubmitReport, the user is definitely logged in.
-                const userObj = JSON.parse(localStorage.getItem('user') || '{}');
-                const CACHE_KEY = `ecoPulse_citizen_reports_cache_${userObj._id || 'guest'}`;
-                
-                const cachedData = localStorage.getItem(CACHE_KEY);
-                let reports = cachedData ? JSON.parse(cachedData) : [];
-                const newReport = res.data.report || res.data.data || res.data;
-                
-                if (isEdit) {
-                    reports = reports.map(r => r._id === id ? newReport : r);
-                } else {
-                    reports = [newReport, ...reports];
-                }
-                localStorage.setItem(CACHE_KEY, JSON.stringify(reports));
-            } catch (cacheErr) {
-                console.error("Cache update failed:", cacheErr);
-            }
-
+            // ⚡ System will refetch on next dashboard visit
             navigate('/citizen/my-reports');
         } catch (err) {
             console.error('Submission error:', err);
@@ -372,6 +352,10 @@ const SubmitReport = ({ isEdit = false }) => {
                                             <option value="Industrial">Industrial Waste</option>
                                             <option value="Medical">Medical Waste</option>
                                             <option value="Construction">Construction Waste</option>
+                                            <option value="E-Waste">E-Waste</option>
+                                            <option value="Plastic">Plastic Waste</option>
+                                            <option value="Organic">Organic / Food Waste</option>
+                                            <option value="Hazardous">Hazardous Waste</option>
                                             <option value="Other">Other</option>
                                         </select>
                                         <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />

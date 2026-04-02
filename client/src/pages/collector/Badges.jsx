@@ -9,11 +9,8 @@ import PageHeader from '../../components/PageHeader';
 
 const CollectorBadges = () => {
     const { token } = useAuth();
-    const [stats, setStats] = useState(() => {
-        const cached = localStorage.getItem('collector_dashboard_data');
-        const parsed = cached ? JSON.parse(cached) : null;
-        return { completed: parsed?.stats?.completed || 0 };
-    });
+    const [stats, setStats] = useState({ completed: 0 });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -22,9 +19,10 @@ const CollectorBadges = () => {
                     headers: { 'x-auth-token': token }
                 });
                 setStats({ completed: res.data?.stats?.completed || 0 });
-                localStorage.setItem('collectorDashboardData', JSON.stringify(res.data));
             } catch (err) {
                 console.error('Error fetching stats:', err);
+            } finally {
+                setLoading(false);
             }
         };
         if (token) fetchStats();

@@ -18,6 +18,7 @@ import CollectorBadges from './pages/collector/Badges';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminReports from './pages/admin/Reports';
 import AdminUsers from './pages/admin/Users';
+import AdminSelectionPage from './pages/admin/SelectionPage';
 import CitizenNotifications from './pages/citizen/Notifications';
 import CollectorNotifications from './pages/collector/Notifications';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -87,17 +88,21 @@ const AppContent = () => {
 
             {/* Admin Protected Routes */}
             <Route 
+              path="/admin/*" 
               element={
                 <ProtectedRoute role="admin">
-                  <ModuleLayout />
+                  <Routes>
+                    <Route path="selection" element={<AdminSelectionPage />} />
+                    <Route element={<ModuleLayout />}>
+                      <Route path="dashboard" element={<AdminDashboard />} />
+                      <Route path="reports" element={<AdminReports />} />
+                      <Route path="users" element={<AdminUsers />} />
+                      <Route path="profile" element={<CitizenProfile />} />
+                    </Route>
+                  </Routes>
                 </ProtectedRoute>
-              }
-            >
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/reports" element={<AdminReports />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/profile" element={<CitizenProfile />} />
-            </Route>
+              } 
+            />
 
             {/* Shared Profile Alias */}
             <Route 
@@ -110,7 +115,7 @@ const AppContent = () => {
               <Route path="/profile" element={<CitizenProfile />} />
             </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </main>
     </div>

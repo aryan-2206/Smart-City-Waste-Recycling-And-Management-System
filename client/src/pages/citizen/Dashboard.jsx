@@ -115,14 +115,11 @@ const EmptyChartState = ({ icon: Icon, title, message }) => (
         <p className="text-[11px] font-bold text-gray-400 max-w-[220px] leading-relaxed italic">{message}</p>
     </div>
 );
-const CitizenDashboard = () => {
+    const CitizenDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [data, setData] = useState(() => {
-        const cached = localStorage.getItem('citizen_dashboard_data');
-        return cached ? JSON.parse(cached) : null;
-    });
-    const [loading, setLoading] = useState(!data);
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const quotes = [
@@ -143,8 +140,6 @@ const CitizenDashboard = () => {
                 headers: { 'x-auth-token': token }
             });
             setData(res.data);
-            // 🔥 Persist to cache for instant sub-zero loading next time
-            localStorage.setItem('citizen_dashboard_data', JSON.stringify(res.data));
         } catch (err) {
             console.error('Failed to fetch dashboard data:', err);
             // Only show toast on manual refresh failure to avoid annoying users during background sync
@@ -185,7 +180,7 @@ const CitizenDashboard = () => {
             return Array.from({ length: 7 }, (_, i) => {
                 const d = new Date(today);
                 d.setDate(today.getDate() - (6 - i));       // 6 days ago → today
-                const key = d.toISOString().split('T')[0]; // "YYYY-MM-DD"
+                const key = d.toLocaleDateString('en-CA');  // YYYY-MM-DD local format
                 const found = raw.find(r => r.name === key);
                 return {
                     name: dayNames[d.getDay()],

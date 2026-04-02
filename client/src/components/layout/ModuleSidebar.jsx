@@ -44,11 +44,12 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
 
             // Fetch Pickups if collector
             if (role === 'Swachhta Mitra') {
-                const res = await axios.get('/api/reports', {
+                const res = await axios.get('/api/reports?status=Pending', {
                     headers: { 'x-auth-token': token }
                 });
-                const activePickups = (res.data.reports || []).filter(r => r.status !== 'Resolved').length;
-                setPickupCount(activePickups);
+                // Count reports matching current user's zone (backend already filters this strictly)
+                const pendingCount = Array.isArray(res.data.reports) ? res.data.reports.length : 0;
+                setPickupCount(pendingCount);
             }
 
             // Fetch Unread Notifications for everyone
@@ -73,11 +74,15 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
             { name: 'Notification', path: '/citizen/notification', icon: Bell },
             { name: 'Profile', path: '/citizen/profile', icon: User },
         ],
-        admin: [
+        admin_citizen: [
             { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+            { name: 'Manage Citizen', path: '/admin/users', icon: UsersIcon },
             { name: 'All Reports', path: '/admin/reports', icon: FileText },
-            { name: 'Manage Users', path: '/admin/users', icon: UsersIcon },
-            { name: 'Profile', path: '/admin/profile', icon: User }, // Shared profile component
+        ],
+        admin_mitra: [
+            { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+            { name: 'Manage Swachhta Mitra', path: '/admin/users', icon: UsersIcon },
+            { name: 'All Pickups', path: '/admin/reports', icon: Truck },
         ],
         'Swachhta Mitra': [
             { name: 'Dashboard', path: '/swachhta-mitra/dashboard', icon: LayoutDashboard },
@@ -89,7 +94,13 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
     };
 
     const currentItems = useMemo(() => {
-        const baseItems = menuItems[role] || menuItems['citizen'];
+        let baseItems = [];
+        if (role === 'admin') {
+            const activeModule = sessionStorage.getItem('adminModule') || 'citizen';
+            baseItems = activeModule === 'citizen' ? menuItems.admin_citizen : menuItems.admin_mitra;
+        } else {
+            baseItems = menuItems[role] || menuItems['citizen'];
+        }
         return baseItems.map(item => {
             if (role === 'Swachhta Mitra' && item.name === 'All Pickups') {
                 return { ...item, badge: pickupCount > 0 ? pickupCount : null };
@@ -105,11 +116,11 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
         <div className="w-[260px] h-screen bg-white dark:bg-[#0B1121] flex flex-col p-4 relative font-sans transition-colors duration-300">
             {/* Logo Section */}
             <div className="mb-4 px-1 pb-4 border-b border-gray-100 dark:border-white/5">
-                <div className="flex items-center gap-3.5">
-                    <div className="p-2 bg-emerald-600 rounded-xl text-white shadow-lg shadow-emerald-600/20">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-600 rounded-xl text-white shadow-lg shadow-emerald-600/20 shrink-0">
                         <Recycle size={22} strokeWidth={2.5} />
                     </div>
-                    <h1 className="text-[1.5rem] font-extrabold text-[#1a202c] dark:text-white tracking-tighter leading-none" style={{ fontWeight: 800 }}>
+                    <h1 className="text-[1.3rem] font-black text-[#1a202c] dark:text-white tracking-tighter leading-none pt-1">
                         EcoPulse
                     </h1>
                 </div>

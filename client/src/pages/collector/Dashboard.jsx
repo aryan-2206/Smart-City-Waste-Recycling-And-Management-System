@@ -112,11 +112,8 @@ const EmptyChartState = ({ icon: Icon, title, message }) => (
 const CollectorDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [data, setData] = useState(() => {
-        const cached = localStorage.getItem('collector_dashboard_data');
-        return cached ? JSON.parse(cached) : null;
-    });
-    const [loading, setLoading] = useState(!data);
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [timeframe, setTimeframe] = useState('7D');
 
@@ -139,8 +136,6 @@ const CollectorDashboard = () => {
                 }
             });
             setData(res.data);
-            // 🔥 Persist to cache (Fast-Load Sync)
-            localStorage.setItem('collector_dashboard_data', JSON.stringify(res.data));
         } catch (err) {
             console.error('Failed to fetch dashboard data:', err);
             // Only toast if it's a critical initial failure or manual refresh

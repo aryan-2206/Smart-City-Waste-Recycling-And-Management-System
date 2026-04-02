@@ -9,7 +9,7 @@ const ReportSchema = new mongoose.Schema({
     garbageType: {
         type: String,
         required: true,
-        enum: ['Household', 'Industrial', 'Medical', 'Construction', 'Other']
+        enum: ['Household', 'Industrial', 'Medical', 'Construction', 'E-Waste', 'Plastic', 'Organic', 'Hazardous', 'Other']
     },
     location: {
         type: String,
@@ -17,11 +17,15 @@ const ReportSchema = new mongoose.Schema({
     },
     city: {
         type: String,
-        default: 'Pune'
+        default: 'pune',
+        lowercase: true,
+        trim: true
     },
     zone: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true,
+        trim: true
     },
     area: {
         type: String

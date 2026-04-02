@@ -53,20 +53,8 @@ const CollectorPickups = () => {
     };
 
     const [hoveredCard, setHoveredCard] = useState(null);
-    // 🚀 High-Speed PERSISTENT UNIVERSAL CACHE (Synced across Citizen/Collector)
-    const CACHE_KEY = `ecoPulse_universal_reports_cache_${user?._id || 'guest'}`;
-
-    const [reports, setReports] = useState(() => {
-        try {
-            const cached = localStorage.getItem(CACHE_KEY);
-            return cached ? JSON.parse(cached) : [];
-        } catch (e) { return []; }
-    });
-
-    const [loading, setLoading] = useState(() => {
-        const cached = localStorage.getItem(CACHE_KEY);
-        return !cached; // only true if no cache
-    });
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [viewingReport, setViewingReport] = useState(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -263,7 +251,6 @@ const CollectorPickups = () => {
 
             console.log(`Setting state with ${finalReports.length} pickups.`);
             setReports(finalReports);
-            localStorage.setItem(CACHE_KEY, JSON.stringify(finalReports));
             setError('');
         } catch (err) {
             setError('Failed to load pickups. Please try again.');
@@ -281,9 +268,6 @@ const CollectorPickups = () => {
         // Immediately update status in both main list and current view
         const updatedReports = reports.map(r => r._id === id ? { ...r, status } : r);
         setReports(updatedReports);
-
-        // ⚡ INSTANT PERSISTENCE: Sync cache immediately
-        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedReports));
 
         if (viewingReport && viewingReport._id === id) {
             setViewingReport(prev => ({ ...prev, status }));
@@ -303,24 +287,6 @@ const CollectorPickups = () => {
                     setViewingReport(updatedData);
                 }
 
-                // 🔥 Celebrate New Badges Instantly
-                if (response.data.awardedBadges && response.data.awardedBadges.length > 0) {
-                    response.data.awardedBadges.forEach(badge => {
-                        toast.success(`${badge.message}`, {
-                            duration: 6000,
-                            icon: '🌟',
-                            position: 'top-center',
-                            style: {
-                                background: '#10B981',
-                                color: '#fff',
-                                fontWeight: '900',
-                                fontSize: '13px',
-                                padding: '16px',
-                                borderRadius: '15px'
-                            }
-                        });
-                    });
-                }
             }).catch(() => {
                 // Background rollback (silent)
             });
@@ -426,7 +392,7 @@ const CollectorPickups = () => {
                     </div>
                     <div className="hidden sm:flex shrink-0 items-center justify-center gap-2 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-lg shadow-lg shadow-emerald-500/20 transition-all cursor-default">
                         <Map size={16} />
-                        <span className="text-[12.5px]">Active Zone: {user?.zone}</span>
+                        <span className="text-[12.5px] capitalize">Active Zone: {user?.zone}</span>
                     </div>
                 </div>
 
@@ -1075,10 +1041,6 @@ const CollectorPickups = () => {
                                     )}
                                     {viewingReport.status === 'Resolved' && (
                                         <div className="flex flex-col gap-2">
-                                            <div className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 rounded-2xl font-black text-[15px] border-2 border-emerald-500/20">
-                                                <CheckCircle2 size={20} />
-                                                TASK RESOLVED
-                                            </div>
                                             <button
                                                 onClick={() => {
                                                     setIsEvidenceView(true);
@@ -1332,9 +1294,6 @@ const CollectorPickups = () => {
                                             // Apply optimistic update immediately
                                             const updatedReports = reports.map(r => r._id === reportId ? optimisticData : r);
                                             setReports(updatedReports);
-
-                                            // ⚡ INSTANT PERSISTENCE: Sync cache immediately
-                                            localStorage.setItem(CACHE_KEY, JSON.stringify(updatedReports));
 
                                             if (viewingReport?._id === reportId) setViewingReport(optimisticData);
                                             setFetchedReports(prev => ({ ...prev, [reportId]: optimisticData }));
