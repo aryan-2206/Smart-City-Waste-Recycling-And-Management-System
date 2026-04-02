@@ -148,15 +148,12 @@ const AdminDashboard = () => {
         const rawMonthly = activeModule === 'citizen' ? data.citizenMonthly : data.mitraMonthly;
         const rawYearly = activeModule === 'citizen' ? data.citizenYearly : data.mitraYearly;
 
-        console.log("rawDaily Source:", rawDaily);
-
         let result = [];
         if (timeframe === '7D') {
             result = Array.from({ length: 7 }, (_, i) => {
                 const d = new Date(today);
                 d.setDate(today.getDate() - (6 - i));
                 const key = d.toLocaleDateString('en-CA'); // YYYY-MM-DD local format
-                console.log("Calculated Key:", key);
 
                 const found = rawDaily?.find(r => r.name === key) || {
                     score: 0,
@@ -206,7 +203,6 @@ const AdminDashboard = () => {
             });
         }
 
-        console.log("growthData Processed:", result);
         return result;
     }, [data, timeframe, activeModule]);
 

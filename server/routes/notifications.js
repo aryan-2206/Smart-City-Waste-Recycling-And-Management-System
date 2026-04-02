@@ -10,14 +10,12 @@ router.get('/', auth, async (req, res) => {
     try {
         const mongoose = require('mongoose');
         const userObjId = new mongoose.Types.ObjectId(req.user.id);
-        console.log(`[API] Notification Query for User Object ID: ${userObjId}`);
         
         const notifications = await Notification.find({ user: userObjId })
             .sort({ createdAt: -1 })
             .limit(50)
             .lean();
             
-        console.log(`[API] Success - Found ${notifications.length} notifications`);
         res.json(notifications);
     } catch (err) {
         console.error('Fetch notifications error:', err);

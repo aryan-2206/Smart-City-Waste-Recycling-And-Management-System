@@ -43,9 +43,7 @@ router.post('/', auth, async (req, res) => {
 
         // 🔥 Award +10 points for submission
         await submitter.addPoints(10);
-        console.log(`[Score] +10 pts awarded to ${submitter.name} for report submission`);
 
-        console.log('--- NOTIFICATION DEBUG (POST REPORT) ---');
         try {
             const citizenNotif = new Notification({
                 user: req.user.id,
@@ -56,7 +54,6 @@ router.post('/', auth, async (req, res) => {
                 points: 10
             });
             await citizenNotif.save();
-            console.log('--- CITIZEN REWARD SAVED (+10 pts) ---');
         } catch (notifErr) {
             console.error('FAILED to save citizen notification:', notifErr.message);
         }
@@ -72,9 +69,7 @@ router.post('/', auth, async (req, res) => {
                 city: cleanReportCity
             });
 
-            console.log(`Found ${collectors.length} collectors in zone: "${report.zone}"`);
             for (const collector of collectors) {
-                console.log('Notifying collector of New Task:', collector._id);
                 const newNotif = new Notification({
                     user: collector._id,
                     report: report._id,
@@ -84,11 +79,9 @@ router.post('/', auth, async (req, res) => {
                 });
                 await newNotif.save();
             }
-            console.log('Collector notifications processed');
         } catch (collectorNotifErr) {
             console.error('FAILED to save collector notifications:', collectorNotifErr.message);
         }
-        console.log('--- END NOTIFICATION DEBUG ---');
 
         res.json(report);
     } catch (err) {
@@ -106,9 +99,6 @@ router.post('/', auth, async (req, res) => {
 // @access  Private
 router.get('/', auth, async (req, res) => {
     try {
-        console.log("--- FETCH REPORTS DEBUG ---");
-        console.log("User Data from Token:", req.user);
-
         const { zone, status, citizenId, search, urgency, sortBy, from, to, page = 1, limit = 50 } = req.query;
         let query = {};
 
@@ -167,8 +157,6 @@ router.get('/', auth, async (req, res) => {
         } else if (citizenId) {
             query.citizenId = citizenId;
         }
-
-        console.log("Generated MongoDB Query:", JSON.stringify(query, null, 2));
 
         // Sorting Logic
         let sort = { createdAt: -1 };
