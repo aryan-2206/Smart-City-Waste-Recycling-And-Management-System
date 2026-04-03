@@ -40,7 +40,7 @@ We have designed a simple and smooth process so that anyone can use EcoPulse eas
 
 ---
 
-## 🔥 Core Features (Premium Experience)
+## 🔥 Core Features
 
 | Feature | Description |
 | :--- | :--- |
