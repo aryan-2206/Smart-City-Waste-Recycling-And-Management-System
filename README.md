@@ -79,8 +79,9 @@ EcoPulse/
  │    ├── routes/     # API endpoints
  │    └── middleware/ # Authentication and role-based logic
  └── package.json     # Project dependencies and setup
+```
 
----
+-----
 
 ## ⚙️ Installation & Setup
 
