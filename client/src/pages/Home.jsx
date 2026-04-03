@@ -17,6 +17,43 @@ import { AboutLandingPage } from './AboutLandingPage';
 // Simple Wrapper for Check icon to avoid name collision
 const CheckLucide = ({ size, strokeWidth }) => <Check size={size} strokeWidth={strokeWidth} />;
 
+// Fast Animated Counter Component
+const AnimatedCounter = ({ target, duration = 1 }) => {
+    const [count, setCount] = React.useState(0);
+    const numericValue = parseInt(target.replace(/[^0-9]/g, ''), 10);
+    const suffix = target.replace(/[0-9,]/g, '');
+    const hasComma = target.includes(',');
+
+    React.useEffect(() => {
+        let startTime;
+        let animationFrame;
+
+        const updateCount = (timestamp) => {
+            if (!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+            // Use easeOutExo for a "fast then pop" feel
+            const easeOutQuad = 1 - (1 - progress) * (1 - progress);
+            const currentCount = Math.floor(easeOutQuad * numericValue);
+            
+            setCount(currentCount);
+
+            if (progress < 1) {
+                animationFrame = requestAnimationFrame(updateCount);
+            }
+        };
+
+        animationFrame = requestAnimationFrame(updateCount);
+        return () => cancelAnimationFrame(animationFrame);
+    }, [numericValue, duration]);
+
+    const formatNumber = (num) => {
+        if (hasComma) return num.toLocaleString('en-IN') + suffix;
+        return num + suffix;
+    };
+
+    return <>{formatNumber(count)}</>;
+};
+
 const Home = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -294,7 +331,9 @@ const Home = () => {
                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${stat.color} group-hover:scale-110 transition-transform duration-500`}>
                                                 {React.cloneElement(stat.icon, { size: 16 })}
                                             </div>
-                                            <h4 className="text-lg sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stat.value}</h4>
+                                            <h4 className="text-lg sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                                <AnimatedCounter target={stat.value} duration={2} />
+                                            </h4>
                                         </div>
                                         <p className="text-[8px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 pl-14">
                                             {stat.label}

@@ -12,14 +12,29 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
+// Updated CORS for Production Deployment
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://ecopulsex.vercel.app',
+  process.env.FRONTEND_URL?.replace(/\/$/, '') // Remove trailing slash if present
+].filter(Boolean);
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
-// Specific headers for CORS and preflight
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-auth-token");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   next();
