@@ -25,6 +25,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { useLocation } from 'react-router-dom';
 import Leaderboard from './pages/Leaderboard';
 
+
 import ModuleLayout from './components/layout/ModuleLayout';
 import { Toaster } from 'react-hot-toast';
 
@@ -52,6 +53,7 @@ const AppContent = () => {
           <Route path="/login" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
           
           {/* Unified Routes with ModuleLayout */}
             {/* Citizen Protected Routes */}

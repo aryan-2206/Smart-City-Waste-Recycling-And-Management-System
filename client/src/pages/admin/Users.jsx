@@ -235,9 +235,7 @@ const AdminUsers = () => {
                             <th className="px-5 py-4 text-[11px] font-black text-gray-800 dark:text-gray-200 uppercase tracking-widest whitespace-nowrap text-center border-r border-gray-800/10 dark:border-white/20">Phone Number</th>
                             <th className="px-5 py-4 text-[11px] font-black text-gray-800 dark:text-gray-200 uppercase tracking-widest whitespace-nowrap text-center border-r border-gray-800/10 dark:border-white/20">Zone</th>
                             <th className="px-5 py-4 text-[11px] font-black text-gray-800 dark:text-gray-200 uppercase tracking-widest whitespace-nowrap text-center border-r border-gray-800/10 dark:border-white/20">City</th>
-                            {activeModule === 'mitra' && (
-                                <th className="px-5 py-4 text-[11px] font-black text-gray-800 dark:text-gray-200 uppercase tracking-widest whitespace-nowrap text-center border-r border-gray-800/10 dark:border-white/20">Area</th>
-                            )}
+
                             <th className="px-5 py-4 text-[11px] font-black text-gray-800 dark:text-gray-200 uppercase tracking-widest whitespace-nowrap text-center border-r border-gray-800/10 dark:border-white/20">Joined Date</th>
                             <th className="px-5 py-4 text-[11px] font-black text-gray-800 dark:text-gray-200 uppercase tracking-widest whitespace-nowrap text-center border-r border-gray-800/10 dark:border-white/20">Latest Badges Earned</th>
                             <th className="px-5 py-4 text-[11px] font-black text-gray-800 dark:text-gray-200 uppercase tracking-widest whitespace-nowrap text-center">Actions</th>
@@ -286,12 +284,7 @@ const AdminUsers = () => {
                                         {u.city || 'Pune'}
                                     </td>
 
-                                    {/* Area (Only for Swachhta Mitra) */}
-                                    {activeModule === 'mitra' && (
-                                        <td className="px-5 py-4 border-r border-gray-800/10 dark:border-white/20 text-center font-bold text-xs text-slate-600 dark:text-slate-400 capitalize whitespace-nowrap">
-                                            {u.area || 'Shivajinagar'}
-                                        </td>
-                                    )}
+
 
                                     {/* Joined Date */}
                                     <td className="px-5 py-4 border-r border-gray-800/10 dark:border-white/20 text-center whitespace-nowrap">
