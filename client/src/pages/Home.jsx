@@ -164,7 +164,7 @@ const Home = () => {
                                     Making cities smarter & cleaner, one report at a time
                                 </div>
                                 <h1 className="text-[14px] sm:text-4xl lg:text-5xl xl:text-6xl font-black text-slate-900 dark:text-white leading-[1.1] tracking-tight mb-1 max-w-4xl">
-                                    EcoPulse Smart <br />
+                                    Nivaran Smart <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500 text-[0.85em]">Waste Management</span>
                                 </h1>
                                 <p className="text-[8px] sm:text-base lg:text-xl text-slate-500 dark:text-slate-400 font-medium mb-2 max-w-2xl leading-relaxed">
@@ -344,7 +344,7 @@ const Home = () => {
                             </div>
                         </section>
 
-                        {/* WHY CHOOSE ECOPULSE */}
+                        {/* WHY CHOOSE Nivaran */}
                         <section className="py-6 sm:py-8 px-[12px] md:px-[30px] lg:px-[50px] max-w-[1440px] mx-auto text-center">
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
@@ -352,7 +352,7 @@ const Home = () => {
                                 viewport={{ once: true }}
                                 className="mb-10 sm:mb-12"
                             >
-                                <h2 className="text-[10px] sm:text-4xl font-black text-slate-900 dark:text-white mb-1 sm:mb-4 tracking-tight">Why Choose EcoPulse?</h2>
+                                <h2 className="text-[10px] sm:text-4xl font-black text-slate-900 dark:text-white mb-1 sm:mb-4 tracking-tight">Why Choose Nivaran?</h2>
                                 <p className="text-[8px] sm:text-lg text-slate-500 dark:text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
                                     A decentralized platform connecting citizens, Swachhta Mitras, and admins to build a sustainable city with modern technology.
                                 </p>
@@ -438,13 +438,13 @@ const Home = () => {
                                     <div className="relative z-10">
                                         <h2 className="text-xl sm:text-5xl font-black mb-3 leading-tight tracking-tight">Ready to make <br />a difference?</h2>
                                         <p className="text-xs sm:text-lg text-emerald-50 mb-6 max-w-2xl mx-auto font-medium opacity-90 leading-relaxed">
-                                            Sign up today and start reporting waste issues in your area. Together we can build a cleaner, greener city with EcoPulse.
+                                            Sign up today and start reporting waste issues in your area. Together we can build a cleaner, greener city with Nivaran.
                                         </p>
                                         <button
                                             onClick={() => navigate('/signup')}
                                             className="px-8 py-3 bg-white text-emerald-700 font-bold rounded-xl text-sm sm:text-lg shadow-xl hover:bg-emerald-50 transition-all hover:scale-105 active:scale-95 shadow-white/10"
                                         >
-                                            Join EcoPulse Now
+                                            Join Nivaran Now
                                         </button>
                                     </div>
                                 </motion.div>
@@ -465,7 +465,7 @@ const Home = () => {
                                         <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-md shadow-emerald-500/20 group cursor-pointer hover:rotate-12 transition-transform">
                                             <Recycle className="text-white w-5 h-5" strokeWidth={2.5} />
                                         </div>
-                                        <h2 className="text-xl font-black transition-colors">EcoPulse</h2>
+                                        <h2 className="text-xl font-black transition-colors">Nivaran</h2>
                                     </div>
                                     <p className="max-w-xl text-[10px] sm:text-base text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
                                         A powerful waste management workspace to track city cleanliness, stay focused on sustainability, and build consistent green habits with clarity and control.
@@ -568,7 +568,7 @@ const Home = () => {
                                                 <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                                                     <Globe size={14} />
                                                 </div>
-                                                <span className="text-[8px] sm:text-base text-slate-400 dark:text-slate-600 font-bold">www.ecopulse.com</span>
+                                                <span className="text-[8px] sm:text-base text-slate-400 dark:text-slate-600 font-bold">www.Nivaran.com</span>
                                             </li>
                                             <li className="flex items-center gap-4 group cursor-pointer">
                                                 <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
@@ -588,7 +588,7 @@ const Home = () => {
                                     className="text-center"
                                 >
                                     <p className="text-slate-500 dark:text-slate-400 font-bold text-[9px] sm:text-sm tracking-wide">
-                                        © 2026 EcoPulse System. All rights reserved.
+                                        © 2026 Nivaran System. All rights reserved.
                                     </p>
                                 </motion.div>
                             </div>

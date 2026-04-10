@@ -15,7 +15,7 @@ app.use(cookieParser());
 // Updated CORS for Production Deployment
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://ecopulsex.vercel.app',
+  'https://Nivaranx.vercel.app',
   process.env.FRONTEND_URL?.replace(/\/$/, '') // Remove trailing slash if present
 ].filter(Boolean);
 
@@ -57,7 +57,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 
 app.get('/', (req, res) => {
-    res.send('EcoPulse API is running...');
+    res.send('Nivaran API is running...');
 });
 
 const PORT = process.env.PORT || 5000;

@@ -304,12 +304,12 @@ router.post('/forgot-password', async (req, res) => {
         await user.save({ validateBeforeSave: false });
 
         const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
-        const message = `You are receiving this email because you requested a password reset for your EcoPulse account.\n\nPlease click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`;
+        const message = `You are receiving this email because you requested a password reset for your Nivaran account.\n\nPlease click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`;
 
         try {
             await sendEmail({
                 email: user.email,
-                subject: 'EcoPulse Password Reset',
+                subject: 'Nivaran Password Reset',
                 message,
             });
             res.status(200).json({ message: 'Email sent successfully!' });

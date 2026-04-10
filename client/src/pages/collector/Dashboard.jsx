@@ -140,7 +140,7 @@ const CollectorDashboard = () => {
             console.error('Failed to fetch dashboard data:', err);
             // Only toast if it's a critical initial failure or manual refresh
             if (!data || isRefresh) {
-                const errMsg = err.response?.data?.message || (typeof err.response?.data === 'string' ? err.response.data : 'EcoPulse Sync: Database connection pending...');
+                const errMsg = err.response?.data?.message || (typeof err.response?.data === 'string' ? err.response.data : 'Nivaran Sync: Database connection pending...');
                 toast.error(errMsg.substring(0, 100));
             }
         } finally {

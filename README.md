@@ -1,4 +1,4 @@
-# 🌿 EcoPulse — Smart Waste Management System
+# 🌿 Nivaran — Smart Waste Management System
 
 <p align="center">
   <img src="https://img.shields.io/badge/Frontend-React%20%7C%20Vite-61DAFB?style=for-the-badge&logo=react"/>
@@ -9,19 +9,19 @@
 
 ---
 
-## 🌟 What is EcoPulse?
+## 🌟 What is Nivaran?
 
 Keeping our cities clean should not be complicated. Today, if someone sees garbage on the street, there is no quick and efficient way to report it. At the same time, waste collectors often do not know exactly where their work is needed.
 
-**EcoPulse** solves this problem. It is a smart and easy-to-use platform that connects **Citizens**, **Waste Collectors (Swachhta Mitras)**, and **Admins** in one system.
+**Nivaran** solves this problem. It is a smart and easy-to-use platform that connects **Citizens**, **Waste Collectors (Swachhta Mitras)**, and **Admins** in one system.
 
-By using modern technology, EcoPulse transforms city cleaning into a fast, organized, and collaborative process. It is a full-stack MERN application designed to create real-world impact.
+By using modern technology, Nivaran transforms city cleaning into a fast, organized, and collaborative process. It is a full-stack MERN application designed to create real-world impact.
 
 ---
 
 ## 🚀 The 5-Step Smart Workflow
 
-We have designed a simple and smooth process so that anyone can use EcoPulse easily:
+We have designed a simple and smooth process so that anyone can use Nivaran easily:
 
 1. **🔐 Easy Login**  
    Users can log in using **Email** or **Google OAuth**. The system automatically identifies their role: **Citizen**, **Swachhta Mitra**, or **Admin**.
@@ -70,7 +70,7 @@ We have designed a simple and smooth process so that anyone can use EcoPulse eas
 ## 📂 Project Architecture
 
 ```text
-EcoPulse/
+Nivaran/
  ├── client/          # Frontend (React + Vite)
  │    ├── src/        # Components, Context, Hooks
  │    └── public/     # Static files and assets
@@ -88,8 +88,8 @@ EcoPulse/
 ### 1\. Clone the Repository
 
 ```bash
-git clone https://github.com/gauravpatil-06/EcoPulse.git
-cd EcoPulse
+git clone https://github.com/gauravpatil-06/Nivaran.git
+cd Nivaran
 ```
 
 ### 2\. Dependency Management
@@ -163,13 +163,13 @@ npm run dev
 
 ---
 
-> "EcoPulse is more than just a project; it's a working solution designed to eliminate friction in municipal waste management. We didn't just build a UI; we built a system that works for the community."
+> "Nivaran is more than just a project; it's a working solution designed to eliminate friction in municipal waste management. We didn't just build a UI; we built a system that works for the community."
 
 ---
 
 <div align="center">
 
-**🌐 [Live Web App](https://ecopulsex.vercel.app/)** | **📁 [Source Code](https://github.com/gauravpatil-06/EcoPulse/)**
+**🌐 [Live Web App](https://Nivaranx.vercel.app/)** | **📁 [Source Code](https://github.com/gauravpatil-06/Nivaran/)**
 
 ✨ **Report. Resolve. Reward. Making our cities cleaner and smarter.**
 

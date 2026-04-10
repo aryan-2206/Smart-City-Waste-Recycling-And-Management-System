@@ -85,7 +85,7 @@ export const AboutLandingPage = ({ onBackToHome }) => {
     const [openFAQ, setOpenFAQ] = useState(null);
 
     const ecosystemSections = [
-        { title: "Our Vision", icon: Sparkles, points: ["EcoPulse aims to build smarter, cleaner urban environments for everyone.", "We use modern tech to ensure zero waste overflow in our streets."] },
+        { title: "Our Vision", icon: Sparkles, points: ["Nivaran aims to build smarter, cleaner urban environments for everyone.", "We use modern tech to ensure zero waste overflow in our streets."] },
         { title: "Our Mission", icon: Target, points: ["Connecting citizens directly with waste collectors for faster action.", "Providing city admins with tools for data-driven cleanup."] },
         { title: "Real-time Reporting", icon: MapPin, points: ["Citizens can report garbage issues with photos and precise location.", "Every report is tracked from submission to final resolution."] },
         { title: "Smart Routing", icon: Truck, points: ["Collectors receive AI-optimized routes to save time and resources.", "Instant notifications for urgent pickups in their designated zones."] },
@@ -107,12 +107,12 @@ export const AboutLandingPage = ({ onBackToHome }) => {
     ];
 
     const faqs = [
-        { q: "What is EcoPulse Management?", a: "EcoPulse is a smart waste management platform that connects citizens directly with waste collectors. It allows you to report garbage issues through a simple app, ensuring faster cleanup and a cleaner neighborhood for everyone." },
+        { q: "What is Nivaran Management?", a: "Nivaran is a smart waste management platform that connects citizens directly with waste collectors. It allows you to report garbage issues through a simple app, ensuring faster cleanup and a cleaner neighborhood for everyone." },
         { q: "How do I report a garbage issue?", a: "To report an issue, simply log in to your dashboard, click on 'Report Garbage', take a photo of the waste, and submit. The system automatically captures your GPS location and notifies the nearest collector crew." },
         { q: "Are there rewards for helping the city?", a: "Yes! For every confirmed report that leads to a cleanup, you earn 'Eco-Points'. You can also earn special badges for your consistent contribution showcased on the city leaderboard." },
         { q: "How does the Smart Pickup work for collectors?", a: "Collectors receive real-time tasks on their dashboard based on reports in their assigned zone. The system provides optimized routes and identifies urgent issues to ensure they finish pickups efficiently." },
         { q: "How does the Admin Portal help city planners?", a: "Admins get a high-level view of all reports and pickup activities. Detailed analytics and heatmaps help them identify problem zones, monitor collector performance, and optimize the entire waste management flow of the city." },
-        { q: "Is EcoPulse available for all cities?", a: "Currently, we are rolling out in selected smart city zones. We aim to expand to all urban areas to build a sustainable, waste-free future across the globe." }
+        { q: "Is Nivaran available for all cities?", a: "Currently, we are rolling out in selected smart city zones. We aim to expand to all urban areas to build a sustainable, waste-free future across the globe." }
     ];
 
     return (
@@ -144,7 +144,7 @@ export const AboutLandingPage = ({ onBackToHome }) => {
 
                     <div className="space-y-5 flex-1 text-center md:text-left">
                         <h1 className="text-[12px] sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight tracking-tighter">
-                            <span className="text-emerald-600">EcoPulse </span>
+                            <span className="text-emerald-600">Nivaran </span>
                             <span className="text-slate-800 dark:text-slate-200">is the central nervous system of your smart city's cleanup team.</span>
                         </h1>
                         <p className="text-[9px] sm:text-xl font-bold text-slate-500 dark:text-slate-400">Connect citizens, collectors, and admins in one unified waste management workspace.</p>
@@ -248,7 +248,7 @@ export const AboutLandingPage = ({ onBackToHome }) => {
                     </div>
                     <div className="text-left">
                         <h2 className="text-[11px] sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">Common Questions</h2>
-                        <p className="text-[9px] sm:text-lg font-bold text-slate-500 dark:text-slate-400 mt-1">Everything you need to know about EcoPulse.</p>
+                        <p className="text-[9px] sm:text-lg font-bold text-slate-500 dark:text-slate-400 mt-1">Everything you need to know about Nivaran.</p>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 pt-6">

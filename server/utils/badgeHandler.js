@@ -64,7 +64,7 @@ const checkAndAwardBadges = async (userId) => {
                         roleMessage = `Heroic Performance! As a dedicated Swachhta Mitra, you've earned the prestigious '${badge.name}' badge. Your outstanding service to the city has earned you +100 bonus points! ✨`;
                     } else {
                         roleTitle = `Environmental Excellence: ${badge.name} 🏆`;
-                        roleMessage = `Eco Hero! Your active contribution to EcoPulse has earned you the '${badge.name}' badge. Thank you for helping us build a cleaner tomorrow! +100 bonus points rewarded! ✨`;
+                        roleMessage = `Eco Hero! Your active contribution to Nivaran has earned you the '${badge.name}' badge. Thank you for helping us build a cleaner tomorrow! +100 bonus points rewarded! ✨`;
                     }
 
                     await Notification.create({

@@ -27,7 +27,7 @@ const Navbar = () => {
                     <div className="bg-emerald-600 p-1.5 rounded-xl text-white shadow-lg shadow-emerald-500/20 group-hover:rotate-12 transition-transform">
                         <Recycle size={21} />
                     </div>
-                    <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter transition-colors">EcoPulse</span>
+                    <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter transition-colors">Nivaran</span>
                 </Link>
 
                 {/* Desktop Navigation */}

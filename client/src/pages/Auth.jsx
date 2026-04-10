@@ -222,7 +222,7 @@ export const Auth = () => {
                             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/30">
                                 <Recycle size={20} className="text-white" strokeWidth={2.5} />
                             </div>
-                            <span className="text-2xl font-black tracking-tight text-white">EcoPulse</span>
+                            <span className="text-2xl font-black tracking-tight text-white">Nivaran</span>
                         </div>
 
                         {/* Welcome Text Section */}

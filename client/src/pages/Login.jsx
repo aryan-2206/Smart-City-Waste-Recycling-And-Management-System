@@ -113,7 +113,7 @@ const Login = () => {
 
                         <div className="text-center pt-4">
                             <p className="text-slate-600 text-sm font-medium">
-                                New to EcoPulse? {' '}
+                                New to Nivaran? {' '}
                                 <Link to="/signup" className="text-emerald-600 hover:text-emerald-700 font-bold underline decoration-2 underline-offset-4 decoration-emerald-100 hover:decoration-emerald-500 transition-all">
                                     Create account
                                 </Link>

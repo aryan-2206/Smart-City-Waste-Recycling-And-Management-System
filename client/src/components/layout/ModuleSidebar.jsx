@@ -121,7 +121,7 @@ const ModuleSidebar = ({ isMobileOpen, closeMobile, role }) => {
                         <Recycle size={22} strokeWidth={2.5} />
                     </div>
                     <h1 className="text-[1.3rem] font-black text-[#1a202c] dark:text-white tracking-tighter leading-none pt-1">
-                        EcoPulse
+                        Nivaran
                     </h1>
                 </div>
 

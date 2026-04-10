@@ -32,8 +32,8 @@ const AdminSelectionPage = () => {
                         <div className="w-12 h-12 sm:w-16 sm:h-16 bg-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white mx-auto mb-4 sm:mb-6 shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30">
                             <Recycle size={24} className="sm:w-8 sm:h-8" strokeWidth={2.5} />
                         </div>
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">EcoPulse Admin</h2>
-                        <p className="mt-2 sm:mt-3 text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm px-2">Select a module to begin managing EcoPulse operations.</p>
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Nivaran Admin</h2>
+                        <p className="mt-2 sm:mt-3 text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm px-2">Select a module to begin managing Nivaran operations.</p>
                     </div>
 
                     {/* Module Selection Grid */}
