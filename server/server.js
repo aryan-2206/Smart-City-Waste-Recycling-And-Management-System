@@ -55,6 +55,8 @@ app.use('/api/badges', require('./routes/badges'));
 app.use('/api/rewards', require('./routes/rewards'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
+app.use('/api/sse', require('./routes/sse').router);
+app.use('/api/tracking', require('./routes/tracking'));
 
 app.get('/', (req, res) => {
     res.send('Nivaran API is running...');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -28,14 +28,22 @@ import {
     Eye,
     Image as ImageIcon,
     UploadCloud,
-    Plus
+    Plus,
+    LayoutList,
+    Kanban,
+    Navigation2,
+    Wifi,
+    WifiOff
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/PageHeader';
 import useDebounce from '../../hooks/useDebounce';
+import useSSE from '../../hooks/useSSE';
 import toast from 'react-hot-toast';
 import { compressImage } from '../../utils/imageUtils';
+import LiveMap from '../../components/LiveMap';
+import PriorityBoard from '../../components/PriorityBoard';
 
 const CollectorPickups = () => {
     const navigate = useNavigate();
@@ -53,6 +61,9 @@ const CollectorPickups = () => {
     };
 
     const [hoveredCard, setHoveredCard] = useState(null);
+    const [activeTab, setActiveTab] = useState('list'); // 'list' | 'map' | 'board'
+    const [collectorLocation, setCollectorLocation] = useState(null);
+    const [sharingLocation, setSharingLocation] = useState(false);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -198,6 +209,40 @@ const CollectorPickups = () => {
     };
 
     const debouncedSearch = useDebounce(filters.topic, 500);
+
+    // SSE real-time updates
+    const { connected } = useSSE('/api/sse', {
+        zone: user?.zone,
+        onEvent: useCallback((type, data) => {
+            if (type === 'report_status_update') {
+                setReports(prev => prev.map(r =>
+                    r._id === data.reportId ? { ...r, status: data.status, urgency: data.urgency } : r
+                ));
+            }
+        }, []),
+    });
+
+    // Share collector location via SSE-backed API
+    const handleShareLocation = () => {
+        if (!navigator.geolocation) return toast.error('Geolocation not supported');
+        setSharingLocation(true);
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude: lat, longitude: lng } = pos.coords;
+                setCollectorLocation([lat, lng]);
+                try {
+                    const token = localStorage.getItem('token');
+                    await axios.post('/api/tracking/location', { lat, lng }, { headers: { 'x-auth-token': token } });
+                    toast.success('📍 Location shared with admin');
+                } catch (err) {
+                    toast.error('Failed to share location');
+                } finally {
+                    setSharingLocation(false);
+                }
+            },
+            () => { toast.error('Location access denied'); setSharingLocation(false); }
+        );
+    };
 
     useEffect(() => {
         if (user?.zone) {
@@ -370,14 +415,96 @@ const CollectorPickups = () => {
                 title="All Pickups"
                 subtitle={`Manage waste collection in ${user?.zone} Zone`}
                 icon={Truck}
+                right={
+                    <div className="flex items-center gap-2">
+                        {/* Live indicator */}
+                        <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black border ${
+                            connected ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-slate-100 text-slate-400 border-slate-200'
+                        }`}>
+                            {connected ? <Wifi size={11} className="animate-pulse" /> : <WifiOff size={11} />}
+                            {connected ? 'LIVE' : 'OFFLINE'}
+                        </div>
+                        {/* Share location */}
+                        <button
+                            onClick={handleShareLocation}
+                            disabled={sharingLocation}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-black rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                            <Navigation2 size={12} />{sharingLocation ? 'Sharing...' : 'Share Location'}
+                        </button>
+                    </div>
+                }
             />
 
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-white/5 rounded-2xl w-fit">
+                {[
+                    { id: 'list', icon: LayoutList, label: 'List' },
+                    { id: 'map',  icon: Map,        label: 'Live Map' },
+                    { id: 'board',icon: Kanban,      label: 'Priority' },
+                ].map(tab => {
+                    const TabIcon = tab.icon;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-black transition-all ${
+                                activeTab === tab.id
+                                    ? 'bg-white dark:bg-[#0B1121] shadow-md text-emerald-600 dark:text-emerald-400'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <TabIcon size={14} />{tab.label}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* MAP TAB */}
+            <AnimatePresence mode="wait">
+                {activeTab === 'map' && (
+                    <motion.div
+                        key="map"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="h-[600px] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-xl"
+                    >
+                        <LiveMap
+                            reports={filteredReportsList}
+                            collectorLocation={collectorLocation}
+                            zone={user?.zone}
+                            className="h-full"
+                        />
+                    </motion.div>
+                )}
+
+                {/* PRIORITY BOARD TAB */}
+                {activeTab === 'board' && (
+                    <motion.div
+                        key="board"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="min-h-[600px]"
+                    >
+                        <PriorityBoard
+                            reports={filteredReportsList}
+                            onReportClick={(report) => { handleViewReport(report); setActiveTab('list'); }}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* LIST TAB */}
+            {activeTab === 'list' && <>
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="flex flex-col gap-3 sm:gap-4 mb-2"
             >
+
                 {/* Search Row */}
                 <div className="flex items-center gap-2 w-full">
                     <div className="relative group flex-1">
@@ -1372,8 +1499,11 @@ const CollectorPickups = () => {
                     }
                 }}
             />
+            </>}
         </div>
+
     );
 };
+
 
 export default CollectorPickups;

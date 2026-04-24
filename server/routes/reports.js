@@ -5,6 +5,8 @@ const auth = require('../middleware/auth');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { checkAndAwardBadges } = require('../utils/badgeHandler');
+const { broadcastEvent } = require('./sse');
+
 
 // @route   POST /api/reports
 // @desc    Submit a new garbage report
@@ -437,9 +439,43 @@ router.put('/:id/status', auth, async (req, res) => {
             awardedBadges,
             message: status === 'Resolved' ? 'Congratulations! Report Resolved and Points Awarded.' : 'Status Updated.'
         });
+
+        // 🔥 SSE BROADCAST: Notify all connected clients in this zone
+        try {
+            broadcastEvent('report_status_update', {
+                reportId: report._id,
+                status: report.status,
+                zone: report.zone,
+                area: report.area || report.location,
+                urgency: report.urgency
+            }, report.zone);
+        } catch (sseErr) {
+            console.error('SSE broadcast error:', sseErr.message);
+        }
     } catch (err) {
         console.error('Update status error:', err.message);
         res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/reports/escalate
+// @desc    Auto-escalate high-urgency reports pending >24h
+// @access  Private (Admin)
+router.post('/escalate', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Admin only' });
+        }
+        const threshold = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const result = await Report.updateMany(
+            { urgency: { $ne: 'High' }, status: 'Pending', createdAt: { $lte: threshold } },
+            { $set: { urgency: 'High' } }
+        );
+        broadcastEvent('escalation_run', { escalated: result.modifiedCount });
+        res.json({ message: `${result.modifiedCount} reports escalated to High urgency`, count: result.modifiedCount });
+    } catch (err) {
+        console.error('Escalation error:', err.message);
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 

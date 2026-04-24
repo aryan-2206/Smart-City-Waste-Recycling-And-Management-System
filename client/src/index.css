@@ -8,6 +8,8 @@
     --text-main: #0f172a; /* slate-900 */
     --card-bg: rgba(255, 255, 255, 0.8);
     --border-color: rgba(0, 0, 0, 0.1);
+    --emerald: #10b981;
+    --emerald-dark: #059669;
   }
 
   .dark {
@@ -21,13 +23,23 @@
     font-family: 'Inter', sans-serif;
     @apply bg-[var(--bg-main)] text-[var(--text-main)] antialiased transition-colors duration-300;
   }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus ring standardization */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-emerald-500/40 ring-offset-1;
+  }
 }
 
 @layer components {
   .glass-card {
     @apply bg-[var(--card-bg)] backdrop-blur-md border border-[var(--border-color)] shadow-xl;
   }
-  
+
   .btn-primary {
     @apply bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-emerald-200 dark:hover:shadow-emerald-900/40;
   }
@@ -36,7 +48,7 @@
     @apply w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-[var(--text-main)] text-center;
     text-align-last: center;
   }
-  
+
   .input-field::placeholder {
     @apply text-center;
   }
@@ -44,8 +56,31 @@
   .page-layout-spacing {
     @apply p-2.5 md:p-5 lg:p-8;
   }
+
+  /* Urgency badge variants */
+  .urgency-high {
+    @apply bg-red-500/10 text-red-600 border border-red-500/20;
+  }
+  .urgency-medium {
+    @apply bg-amber-500/10 text-amber-600 border border-amber-500/20;
+  }
+  .urgency-low {
+    @apply bg-emerald-500/10 text-emerald-600 border border-emerald-500/20;
+  }
+
+  /* Pulse ring animation for critical items */
+  .pulse-ring {
+    @apply relative;
+  }
+  .pulse-ring::before {
+    content: '';
+    @apply absolute -inset-1 rounded-full border-2 border-red-500/40 animate-ping;
+  }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   GRADIENT ANIMATIONS
+───────────────────────────────────────────────────────────── */
 .bg-gradient-animate {
   background: linear-gradient(-45deg, #10b981, #34d399, #059669, #10b981);
   background-size: 400% 400%;
@@ -53,11 +88,77 @@
 }
 
 @keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   SKELETON SHIMMER ANIMATION
+───────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FADE-IN ANIMATION
+───────────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+
+/* Stagger children */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+
+/* ─────────────────────────────────────────────────────────────
+   SCALE-IN (for modals/toasts)
+───────────────────────────────────────────────────────────── */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PODIUM RISE (for leaderboard)
+───────────────────────────────────────────────────────────── */
+@keyframes podium-rise {
+  from { transform: scaleY(0); opacity: 0; transform-origin: bottom; }
+  to   { transform: scaleY(1); opacity: 1; transform-origin: bottom; }
+}
+
+.animate-podium-rise {
+  animation: podium-rise 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   URGENCY PULSE (for high-priority badges)
+───────────────────────────────────────────────────────────── */
+@keyframes urgency-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.animate-urgency-pulse {
+  animation: urgency-pulse 2s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SCROLLBARS
+───────────────────────────────────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -68,14 +169,80 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-emerald-500/30 transition-colors;
+  @apply bg-slate-200 dark:bg-slate-800 rounded-full;
 }
 
-.no-scrollbar::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-emerald-500/30;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
-.no-scrollbar {
+.no-scrollbar,
+.hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LEAFLET MAP OVERRIDES
+───────────────────────────────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+  @apply rounded-2xl shadow-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#0d1a2e] text-slate-800 dark:text-white;
+  padding: 4px !important;
+}
+
+.leaflet-popup-tip {
+  @apply bg-white dark:bg-[#0d1a2e];
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ZONE HEATMAP (admin dashboard)
+───────────────────────────────────────────────────────────── */
+.zone-heatmap-cell {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.zone-heatmap-cell:hover {
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MICRO-INTERACTIONS
+───────────────────────────────────────────────────────────── */
+.interactive-card {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.interactive-card:hover {
+  transform: scale(1.01) translateY(-2px);
+  box-shadow: 0 20px 40px -8px rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Button press ripple */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-ripple:active::after {
+  opacity: 1;
 }
