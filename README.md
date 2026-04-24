@@ -155,11 +155,8 @@ npm run dev
 
 ## 👥 The Team
 
-- **Gaurav Patil**
-- **Abhishek Survase**  
-- **Suraj Desale**  
-- **Snehal Aakhud**  
-- **Vaishnavi Badgujar**  
+- **Aryan Doshi (Github - @aryan-2206)**
+- **Dhairya Dabi (Github - @Dhairya211206)**   
 
 ---
 
@@ -169,7 +166,7 @@ npm run dev
 
 <div align="center">
 
-**🌐 [Live Web App](https://Nivaranx.vercel.app/)** | **📁 [Source Code](https://github.com/gauravpatil-06/Nivaran/)**
+**📁 [Source Code](https://github.com/aryan-2206/Smart-City-Waste-Recycling-And-Management-System)**
 
 ✨ **Report. Resolve. Reward. Making our cities cleaner and smarter.**
 
