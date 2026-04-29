@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-    Wallet, Trophy, Zap, RefreshCcw, TrendingUp, Users as UsersIcon, Truck, FileText, CheckCircle2, Clock
+    Wallet, Trophy, Zap, RefreshCcw, TrendingUp, Users as UsersIcon, Truck, FileText, CheckCircle2, Clock,
+    Map, Flame, AlertTriangle, Wifi, WifiOff
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import PageHeader from '../../components/PageHeader';
+import useSSE from '../../hooks/useSSE';
+import { StatSkeleton } from '../../components/SkeletonLoader';
 
 /* ─────────────────────────────────────────────────────────────────
    HoverCard & StatCard Components (Premium Sync)
@@ -108,22 +111,120 @@ const CustomTooltip = ({ active, payload, label }) => {
     );
 };
 
+/* ─────────────────────────────────────────────────────────────────
+   Zone Heatmap Component
+───────────────────────────────────────────────────────────────── */
+const ZoneHeatmap = ({ reports = [] }) => {
+    const zoneSummary = useMemo(() => {
+        const map = {};
+        reports.forEach(r => {
+            const z = (r.zone || 'Unknown').toUpperCase();
+            if (!map[z]) map[z] = { total: 0, resolved: 0, pending: 0, inProgress: 0, high: 0 };
+            map[z].total++;
+            if (r.status === 'Resolved') map[z].resolved++;
+            else if (r.status === 'In Progress') map[z].inProgress++;
+            else map[z].pending++;
+            if (r.urgency === 'High') map[z].high++;
+        });
+        return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+    }, [reports]);
+
+    if (zoneSummary.length === 0) return (
+        <div className="flex items-center justify-center h-32 text-slate-400 text-sm font-medium">No zone data available yet.</div>
+    );
+
+    const maxTotal = Math.max(...zoneSummary.map(([, v]) => v.total), 1);
+
+    return (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            {zoneSummary.map(([zone, stats], idx) => {
+                const intensity = stats.total / maxTotal;
+                const bg = `rgba(16,185,129,${0.05 + intensity * 0.35})`;
+                const border = `rgba(16,185,129,${0.15 + intensity * 0.4})`;
+                const isHot = stats.high > 0;
+                return (
+                    <motion.div
+                        key={zone}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.04 }}
+                        className="zone-heatmap-cell relative rounded-2xl p-4 border cursor-default group"
+                        style={{ background: bg, borderColor: border }}
+                        title={`Zone ${zone}: ${stats.total} reports, ${stats.resolved} resolved`}
+                    >
+                        {isHot && (
+                            <span className="absolute top-2 right-2 text-xs animate-urgency-pulse" title="High urgency reports">
+                                🔥
+                            </span>
+                        )}
+                        <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">{zone}</p>
+                        <p className="text-2xl font-black text-slate-800 dark:text-white mb-1">{stats.total}</p>
+                        <div className="flex flex-col gap-0.5 text-[9px] font-bold">
+                            <span className="text-emerald-600">✓ {stats.resolved}</span>
+                            <span className="text-blue-500">↻ {stats.inProgress}</span>
+                            <span className="text-amber-500">◷ {stats.pending}</span>
+                        </div>
+                        {/* Heat bar */}
+                        <div className="mt-2 h-1 bg-white/20 rounded-full overflow-hidden">
+                            <div style={{ width: `${intensity * 100}%`, background: isHot ? '#ef4444' : '#10b981' }} className="h-full rounded-full transition-all duration-700" />
+                        </div>
+                    </motion.div>
+                );
+            })}
+        </div>
+    );
+};
+
 const AdminDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [data, setData] = useState(null);
+    const [allReports, setAllReports] = useState([]);
     const [timeframe, setTimeframe] = useState('7D');
+    const [escalating, setEscalating] = useState(false);
+    const [liveUpdates, setLiveUpdates] = useState([]);
     const activeModule = sessionStorage.getItem('adminModule') || 'citizen';
+
+    // SSE real-time connection
+    const { connected } = useSSE('/api/sse', {
+        onEvent: useCallback((type, eventData) => {
+            if (type === 'report_status_update') {
+                setLiveUpdates(prev => [eventData, ...prev].slice(0, 5));
+                // Also refresh dashboard data
+                fetchAdminData();
+            }
+            if (type === 'escalation_run') {
+                toast.success(`⚡ Auto-escalated ${eventData.escalated} reports to High urgency`);
+                fetchAdminData();
+            }
+        }, []),
+    });
 
     const fetchAdminData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`/api/dashboard/admin`, {
-                headers: { 'x-auth-token': token }
-            });
-            setData(res.data);
+            const [dashRes, reportsRes] = await Promise.all([
+                axios.get(`/api/dashboard/admin`, { headers: { 'x-auth-token': token } }),
+                axios.get(`/api/reports`, { headers: { 'x-auth-token': token }, params: { limit: 200 } })
+            ]);
+            setData(dashRes.data);
+            setAllReports(reportsRes.data?.reports || []);
         } catch (err) {
             console.error('Admin Data Fetch Failed:', err);
+        }
+    };
+
+    const handleEscalate = async () => {
+        setEscalating(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post('/api/reports/escalate', {}, { headers: { 'x-auth-token': token } });
+            toast.success(res.data.message);
+            fetchAdminData();
+        } catch (err) {
+            toast.error('Escalation failed');
+        } finally {
+            setEscalating(false);
         }
     };
 
@@ -212,6 +313,25 @@ const AdminDashboard = () => {
                 title={activeModule === 'citizen' ? 'Citizen Dashboard' : 'Swachhta Mitra Dashboard'}
                 subtitle={`Overview of all ${activeModule} module metrics and system performance.`}
                 icon={activeModule === 'citizen' ? UsersIcon : Truck}
+                right={
+                    <div className="flex items-center gap-2">
+                        {/* SSE Live indicator */}
+                        <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black border ${
+                            connected ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-slate-100 text-slate-400 border-slate-200'
+                        }`}>
+                            {connected ? <Wifi size={11} className="animate-pulse" /> : <WifiOff size={11} />}
+                            {connected ? 'LIVE' : 'OFFLINE'}
+                        </div>
+                        {/* Escalation trigger */}
+                        <button
+                            onClick={handleEscalate}
+                            disabled={escalating}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[11px] font-black rounded-xl shadow-lg shadow-red-500/20 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                            <Flame size={12} />{escalating ? 'Escalating...' : 'Run Escalation'}
+                        </button>
+                    </div>
+                }
             />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
@@ -310,6 +430,40 @@ const AdminDashboard = () => {
                         <div className="flex items-center justify-center h-full text-slate-300 font-black tracking-widest text-[10px] italic">Awaiting synchronized metrics...</div>
                     )}
                 </div>
+            </motion.div>
+
+            {/* Zone Heatmap */}
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                className="glass-card bg-white dark:bg-[#0B1121] border-2 border-gray-50 dark:border-white/5 rounded-[1.2rem] p-6 sm:p-8 shadow-xl"
+            >
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 rounded-xl dark:bg-emerald-950/20 text-emerald-600">
+                            <Map size={18} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <h2 className="text-[17px] font-black text-gray-800 dark:text-gray-200 tracking-tight">Zone Performance Heatmap</h2>
+                            <p className="text-[11px] text-gray-400 mt-0.5">Heat intensity = report volume · 🔥 = High-urgency active</p>
+                        </div>
+                    </div>
+                    {/* Live updates ticker */}
+                    <AnimatePresence>
+                        {liveUpdates.length > 0 && (
+                            <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0 }}
+                                className="hidden lg:flex flex-col gap-1 max-w-[220px]">
+                                {liveUpdates.slice(0,2).map((u, i) => (
+                                    <div key={i} className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 px-2 py-1 rounded-lg truncate">
+                                        ⚡ {u.area} → {u.status}
+                                    </div>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+                <ZoneHeatmap reports={allReports} />
             </motion.div>
         </div>
     );

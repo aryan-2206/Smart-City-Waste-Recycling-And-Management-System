@@ -1,33 +1,36 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const PageHeader = ({ title, subtitle, icon: Icon, badge }) => {
+const PageHeader = ({ title, subtitle, icon: Icon, badge, right }) => {
     return (
         <div className="flex flex-col gap-1.5 mb-2">
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2.5"
+                className="flex items-center justify-between gap-2.5"
             >
-                {Icon && (
-                    <div className="text-emerald-500 shrink-0">
-                        <Icon size={24} strokeWidth={2.5} />
-                    </div>
-                )}
-                <div className="flex items-center gap-2">
-                    <h1 className="text-lg lg:text-xl font-black text-slate-800 dark:text-white tracking-tight">
-                        {title}
-                    </h1>
-                    {badge !== undefined && badge > 0 && (
-                        <motion.div 
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="bg-rose-500 text-white text-[10px] sm:text-[11px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-lg shadow-rose-500/30"
-                        >
-                            {badge}
-                        </motion.div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                    {Icon && (
+                        <div className="text-emerald-500 shrink-0">
+                            <Icon size={24} strokeWidth={2.5} />
+                        </div>
                     )}
+                    <div className="flex items-center gap-2 min-w-0">
+                        <h1 className="text-lg lg:text-xl font-black text-slate-800 dark:text-white tracking-tight truncate">
+                            {title}
+                        </h1>
+                        {badge !== undefined && badge > 0 && (
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="bg-rose-500 text-white text-[10px] sm:text-[11px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-lg shadow-rose-500/30 shrink-0"
+                            >
+                                {badge}
+                            </motion.div>
+                        )}
+                    </div>
                 </div>
+                {right && <div className="shrink-0">{right}</div>}
             </motion.div>
 
             {subtitle && (
